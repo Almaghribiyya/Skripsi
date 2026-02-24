@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, HTTPException, Request
+import logging
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -13,39 +14,32 @@ from qdrant_client import QdrantClient
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 
-# Load Environment Variables
 load_dotenv()
 
-# ==========================================
-# 1. INISIALISASI APP & RATE LIMITER
-# ==========================================
+# Konfigurasi Logger dasar
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="Pustaka Digital Al-Qur'an API (RAG)",
-    description="REST API untuk Sistem Tanya Jawab Al-Qur'an menggunakan metode Retrieval-Augmented Generation (RAG). Dilengkapi dengan mekanisme Fallback dan Negative Rejection.",
-    version="1.0.0",
-    contact={
-        "name": "Muhammad Rezka Al Maghribi",
-        "email": "rezkaalmamuhammad@gmail.com",
-    }
+    description="REST API untuk Sistem Tanya Jawab Al-Qur'an (Retrieval-Augmented Generation).",
+    version="1.0.0"
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Custom Global Error Handler (Menjawab Saran Penguji)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global Exception: {str(exc)}")
     return JSONResponse(
         status_code=500,
-        content={"status": "error", "message": f"Terjadi kesalahan internal: {str(exc)}"},
+        content={"status": "error", "message": f"Terjadi kesalahan internal sistem."},
     )
 
-# ==========================================
-# 2. DATA MODELS (Untuk Swagger UI & Validasi)
-# ==========================================
 class QueryRequest(BaseModel):
     pertanyaan: str = Field(..., examples=["Apa itu hari pembalasan?"])
-    top_k: int = Field(3, ge=1, le=5, description="Jumlah referensi ayat yang ingin ditarik (1-5)")
+    top_k: int = Field(3, ge=1, le=5, description="Jumlah referensi (1-5)")
 
 class ReferensiItem(BaseModel):
     skor_kemiripan: float
@@ -60,9 +54,7 @@ class QueryResponse(BaseModel):
     jawaban_llm: str
     referensi: list[ReferensiItem]
 
-# ==========================================
-# 3. INISIALISASI MODEL & VECTOR DATABASE
-# ==========================================
+# Inisialisasi Model
 embeddings = HuggingFaceEmbeddings(
     model_name="intfloat/multilingual-e5-base",
     model_kwargs={'device': 'cpu'},
@@ -82,9 +74,6 @@ llm_primary = ChatGoogleGenerativeAI(
     temperature=0.3 
 )
 
-# ==========================================
-# 4. PROMPT ENGINEERING (Negative Rejection)
-# ==========================================
 prompt_template = PromptTemplate(
     input_variables=["konteks", "pertanyaan"],
     template="""Anda adalah asisten virtual Islami yang bertugas menjawab pertanyaan berdasarkan Al-Qur'an.
@@ -103,13 +92,10 @@ ATURAN KETAT (Negative Rejection):
 Jawaban:"""
 )
 
-# ==========================================
-# 5. ENDPOINT PENCARIAN
-# ==========================================
 @app.post("/api/ask", response_model=QueryResponse, tags=["Q&A"])
 @limiter.limit("10/minute") 
 async def ask_quran(request: Request, payload: QueryRequest):
-    # Tahap A: Retrieval (Pencarian Vektor)
+    # Tahap A: Retrieval
     hasil_pencarian = vector_store.similarity_search_with_score(
         query=payload.pertanyaan, 
         k=payload.top_k
@@ -123,30 +109,36 @@ async def ask_quran(request: Request, payload: QueryRequest):
             referensi=[]
         )
 
-    konteks_teks = ""
+    # Optimasi: Menggunakan List Comprehension dan Join untuk merakit data
     referensi_data = []
+    konteks_list = []
+    
     for doc, score in hasil_pencarian:
-        nama_surah = doc.metadata.get("nama_surah")
-        ayat = doc.metadata.get("ayat")
-        tafsir = doc.metadata.get("tafsir_wajiz")
+        meta = doc.metadata
+        nama_surah = meta.get("nama_surah", "Tidak Diketahui")
+        ayat = meta.get("ayat", 0)
+        terjemahan = meta.get("terjemahan", "")
+        tafsir = meta.get("tafsir_wajiz", "")
         
-        konteks_teks += f"Surah {nama_surah} Ayat {ayat}:\nTerjemahan: {doc.metadata.get('terjemahan')}\nTafsir: {tafsir}\n\n"
+        konteks_list.append(f"Surah {nama_surah} Ayat {ayat}:\nTerjemahan: {terjemahan}\nTafsir: {tafsir}")
         
         referensi_data.append(ReferensiItem(
             skor_kemiripan=score,
             surah=nama_surah,
             ayat=ayat,
-            teks_arab=doc.metadata.get("teks_arab"),
-            terjemahan=doc.metadata.get("terjemahan")
+            teks_arab=meta.get("teks_arab", ""),
+            terjemahan=terjemahan
         ))
+        
+    konteks_teks = "\n\n".join(konteks_list)
 
-    # Tahap B: Generation (Kirim ke LLM) dengan Fallback Mechanism
+    # Tahap B: Generation
     try:
         prompt_final = prompt_template.format(konteks=konteks_teks, pertanyaan=payload.pertanyaan)
         response = llm_primary.invoke(prompt_final)
         jawaban_llm = response.content
     except Exception as e:
-        print(f"LLM Error: {e}")
+        logger.error(f"LLM API Error: {str(e)}")
         jawaban_llm = "Mohon maaf, mesin penalaran AI kami sedang mengalami gangguan (Fallback Mode). Namun, berikut adalah ayat-ayat yang paling relevan dengan pertanyaan Anda yang berhasil kami temukan:"
 
     return QueryResponse(

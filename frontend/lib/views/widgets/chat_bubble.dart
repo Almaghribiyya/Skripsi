@@ -27,10 +27,10 @@ class ChatBubble extends StatelessWidget {
                   height: 32,
                   width: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0FB345).withOpacity(0.2),
+                    color: const Color(0xFF0FB345).withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: const Color(0xFF0FB345).withOpacity(0.3)),
+                        color: const Color(0xFF0FB345).withValues(alpha: 0.3)),
                   ),
                   child: const Icon(Icons.auto_awesome,
                       color: Color(0xFF0FB345), size: 16),

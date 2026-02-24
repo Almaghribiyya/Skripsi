@@ -1,5 +1,4 @@
 import 'dart:convert';
-import '../models/message_model.dart';
 // import 'package:http/http.dart' as http; // Uncomment saat siap digunakan
 
 class NlpService {

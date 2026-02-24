@@ -37,7 +37,7 @@ class ReferenceCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0FB345).withOpacity(0.2),
+                  color: const Color(0xFF0FB345).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
