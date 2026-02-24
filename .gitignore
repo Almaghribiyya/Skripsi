@@ -1,0 +1,17 @@
+# Environment Variables
+.env
+
+# Folder Database Qdrant (Sangat penting agar database bergiga-giga tidak ikut terunggah)
+qdrant_storage/
+
+# Python Virtual Environment
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Dataset JSON (Opsional: Hapus tanda pagar di bawah jika Anda tidak ingin JSON ikut terunggah)
+# quran_hybrid_dataset.json
+# quran_test_dataset.json
