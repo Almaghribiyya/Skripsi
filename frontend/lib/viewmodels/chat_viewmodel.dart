@@ -7,15 +7,76 @@ class ChatViewModel extends ChangeNotifier {
   final ScrollController scrollController = ScrollController();
   final NlpService _nlpService = NlpService();
   
-  List<MessageModel> currentChat = [];
+  // Perubahan: Mengelola multi-sesi
+  List<ChatSession> sessions = [];
+  String? activeSessionId;
   bool isLoading = false;
+
+  // Mendapatkan percakapan untuk sesi yang sedang aktif
+  List<MessageModel> get currentChat {
+    if (activeSessionId == null) return [];
+    final session = sessions.firstWhere((s) => s.id == activeSessionId);
+    return session.messages;
+  }
+
+  ChatViewModel() {
+    // Buat sesi default saat aplikasi pertama kali dibuka
+    createNewSession();
+  }
+
+  // Fitur 1: Membuat percakapan baru
+  void createNewSession() {
+    final newSession = ChatSession(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: "New Chat",
+      messages: [],
+      createdAt: DateTime.now(),
+    );
+    sessions.insert(0, newSession); // Tambahkan di atas
+    activeSessionId = newSession.id;
+    notifyListeners();
+  }
+
+  // Berpindah sesi dari Sidebar
+  void switchSession(String sessionId) {
+    activeSessionId = sessionId;
+    notifyListeners();
+    _scrollToBottom();
+  }
+
+  // Fitur 2: Ganti nama sesi
+  void renameSession(String sessionId, String newTitle) {
+    final sessionIndex = sessions.indexWhere((s) => s.id == sessionId);
+    if (sessionIndex != -1 && newTitle.isNotEmpty) {
+      sessions[sessionIndex].title = newTitle;
+      notifyListeners();
+    }
+  }
+
+  // Fitur 2: Hapus sesi
+  void deleteSession(String sessionId) {
+    sessions.removeWhere((s) => s.id == sessionId);
+    if (sessions.isEmpty) {
+      createNewSession(); // Pastikan selalu ada minimal 1 sesi
+    } else if (activeSessionId == sessionId) {
+      activeSessionId = sessions.first.id; // Pindah ke sesi teratas
+    }
+    notifyListeners();
+  }
 
   void sendMessage() async {
     final text = textController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || activeSessionId == null) return;
 
-    // Tambah pesan user
-    currentChat.add(MessageModel(
+    final sessionIndex = sessions.indexWhere((s) => s.id == activeSessionId);
+    if (sessionIndex == -1) return;
+
+    // Ganti judul otomatis jika ini pesan pertama
+    if (sessions[sessionIndex].messages.isEmpty) {
+      sessions[sessionIndex].title = text.length > 20 ? "${text.substring(0, 20)}..." : text;
+    }
+
+    sessions[sessionIndex].messages.add(MessageModel(
       id: DateTime.now().toString(),
       text: text,
       sender: MessageSender.user,
@@ -28,18 +89,13 @@ class ChatViewModel extends ChangeNotifier {
     _scrollToBottom();
 
     try {
-      // Panggil NLP Service
       final response = await _nlpService.getAnswerFromVectorDB(text);
-      
       List<VerseReference> refs = [];
       if (response['references'] != null) {
-        refs = (response['references'] as List)
-            .map((data) => VerseReference.fromJson(data))
-            .toList();
+        refs = (response['references'] as List).map((data) => VerseReference.fromJson(data)).toList();
       }
 
-      // Tambah balasan AI
-      currentChat.add(MessageModel(
+      sessions[sessionIndex].messages.add(MessageModel(
         id: DateTime.now().toString(),
         text: response['answer'],
         sender: MessageSender.ai,
@@ -47,7 +103,7 @@ class ChatViewModel extends ChangeNotifier {
         verseReferences: refs,
       ));
     } catch (e) {
-      currentChat.add(MessageModel(
+      sessions[sessionIndex].messages.add(MessageModel(
         id: DateTime.now().toString(),
         text: "Maaf, terjadi kesalahan saat menghubungi server.",
         sender: MessageSender.ai,

@@ -26,7 +26,8 @@ class ChatView extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
             onPressed: () {
-              // Logika reset/new chat
+              // Memanggil fungsi membuat chat baru
+              context.read<ChatViewModel>().createNewSession();
             },
           )
         ],

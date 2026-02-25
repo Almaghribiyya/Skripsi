@@ -41,3 +41,17 @@ class MessageModel {
     this.verseReferences,
   });
 }
+
+class ChatSession {
+  final String id;
+  String title;
+  List<MessageModel> messages;
+  final DateTime createdAt;
+
+  ChatSession({
+    required this.id,
+    required this.title,
+    this.messages = const [],
+    required this.createdAt,
+  });
+}
