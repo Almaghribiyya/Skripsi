@@ -5,7 +5,7 @@ import 'reference_card.dart';
 class ChatBubble extends StatelessWidget {
   final MessageModel message;
 
-  const ChatBubble({Key? key, required this.message}) : super(key: key);
+  const ChatBubble({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,7 @@ class ChatBubble extends StatelessWidget {
               message.verseReferences!.isNotEmpty)
             ...message.verseReferences!
                 .map((ref) => ReferenceCard(reference: ref))
-                .toList(),
+                ,
         ],
       ),
     );

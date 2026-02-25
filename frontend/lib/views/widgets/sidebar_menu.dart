@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SidebarMenu extends StatelessWidget {
-  const SidebarMenu({Key? key}) : super(key: key);
+  const SidebarMenu({super.key});
 
   @override
   Widget build(BuildContext context) {

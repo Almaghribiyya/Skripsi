@@ -16,7 +16,7 @@ void main() {
 }
 
 class PustakaQnaApp extends StatelessWidget {
-  const PustakaQnaApp({Key? key}) : super(key: key);
+  const PustakaQnaApp({super.key});
 
   @override
   Widget build(BuildContext context) {

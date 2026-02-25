@@ -6,7 +6,7 @@ import 'widgets/chat_input.dart';
 import 'widgets/sidebar_menu.dart';
 
 class ChatView extends StatelessWidget {
-  const ChatView({Key? key}) : super(key: key);
+  const ChatView({super.key});
 
   @override
   Widget build(BuildContext context) {

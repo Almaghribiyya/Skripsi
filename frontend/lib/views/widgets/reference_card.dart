@@ -4,7 +4,7 @@ import '../../models/message_model.dart';
 class ReferenceCard extends StatelessWidget {
   final VerseReference reference;
 
-  const ReferenceCard({Key? key, required this.reference}) : super(key: key);
+  const ReferenceCard({super.key, required this.reference});
 
   @override
   Widget build(BuildContext context) {

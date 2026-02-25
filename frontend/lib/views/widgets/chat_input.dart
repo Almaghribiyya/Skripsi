@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 
 class ChatInput extends StatelessWidget {
-  const ChatInput({Key? key}) : super(key: key);
+  const ChatInput({super.key});
 
   @override
   Widget build(BuildContext context) {
