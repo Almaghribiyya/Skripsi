@@ -3,13 +3,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 class NlpService {
-  // Android Emulator: gunakan 10.0.2.2 (mengarah ke localhost host machine)
-  // Web / Desktop: gunakan localhost langsung
+  // Untuk HP fisik: gunakan IP LAN komputer (pastikan 1 jaringan WiFi)
+  // Untuk Emulator: gunakan 10.0.2.2
+  // Untuk Web/Desktop: gunakan localhost
   final String baseUrl;
 
   NlpService({String? baseUrl})
       : baseUrl = baseUrl ??
-            (kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000');
+            (kIsWeb ? 'http://localhost:8000' : 'http://192.168.0.110:8000');
 
   Future<Map<String, dynamic>> getAnswerFromVectorDB(
     String query, {

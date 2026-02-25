@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -16,6 +17,7 @@ class _LoginViewState extends State<LoginView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
 
   // Theme Colors
   final Color primaryColor = const Color(0xFF064C18);
@@ -67,6 +69,10 @@ class _LoginViewState extends State<LoginView> {
       }
     }
 
+    // Simpan profil ke Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) await _firestoreService.saveUserProfile(user);
+
     if (mounted) {
       setState(() => _isLoading = false);
       Navigator.pushReplacementNamed(context, '/chat');
@@ -93,6 +99,10 @@ class _LoginViewState extends State<LoginView> {
         return;
       }
     }
+
+    // Simpan profil ke Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) await _firestoreService.saveUserProfile(user);
 
     if (mounted) {
       setState(() => _isLoading = false);
@@ -128,6 +138,10 @@ class _LoginViewState extends State<LoginView> {
         return;
       }
     }
+
+    // Simpan profil ke Firestore
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) await _firestoreService.saveUserProfile(user);
 
     if (mounted) {
       setState(() => _isLoading = false);
