@@ -15,8 +15,9 @@ class ChatViewModel extends ChangeNotifier {
   // Mendapatkan percakapan untuk sesi yang sedang aktif
   List<MessageModel> get currentChat {
     if (activeSessionId == null) return [];
-    final session = sessions.firstWhere((s) => s.id == activeSessionId);
-    return session.messages;
+    final idx = sessions.indexWhere((s) => s.id == activeSessionId);
+    if (idx == -1) return [];
+    return sessions[idx].messages;
   }
 
   ChatViewModel() {
@@ -28,7 +29,7 @@ class ChatViewModel extends ChangeNotifier {
   void createNewSession() {
     final newSession = ChatSession(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: "New Chat",
+      title: "Obrolan Baru",
       messages: [],
       createdAt: DateTime.now(),
     );
@@ -64,11 +65,23 @@ class ChatViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Reset semua data saat logout
+  void clearAllSessions() {
+    sessions.clear();
+    activeSessionId = null;
+    textController.clear();
+    createNewSession();
+  }
+
   void sendMessage() async {
     final text = textController.text.trim();
     if (text.isEmpty || activeSessionId == null) return;
 
-    final sessionIndex = sessions.indexWhere((s) => s.id == activeSessionId);
+    // Capture the target session ID — use ID-based lookup throughout
+    // to stay safe across async boundaries.
+    final targetSessionId = activeSessionId!;
+
+    int sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
     if (sessionIndex == -1) return;
 
     // Ganti judul otomatis jika ini pesan pertama
@@ -90,6 +103,11 @@ class ChatViewModel extends ChangeNotifier {
 
     try {
       final response = await _nlpService.getAnswerFromVectorDB(text);
+
+      // Re-lookup after async gap — session may have been deleted/reordered
+      sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
+      if (sessionIndex == -1) return; // Session was deleted during request
+
       List<VerseReference> refs = [];
       if (response['references'] != null) {
         refs = (response['references'] as List).map((data) => VerseReference.fromJson(data)).toList();
@@ -103,6 +121,10 @@ class ChatViewModel extends ChangeNotifier {
         verseReferences: refs,
       ));
     } catch (e) {
+      // Re-lookup after async gap
+      sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
+      if (sessionIndex == -1) return;
+
       sessions[sessionIndex].messages.add(MessageModel(
         id: DateTime.now().toString(),
         text: "Maaf, terjadi kesalahan saat menghubungi server.",

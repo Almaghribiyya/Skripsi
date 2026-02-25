@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'config/app_theme.dart';
 import 'viewmodels/chat_viewmodel.dart';
-import 'views/splash_view.dart';
+import 'views/welcome_view.dart';
 import 'views/login_view.dart';
 import 'views/chat_view.dart';
+import 'views/settings_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,17 +25,17 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => ChatViewModel(),
       child: MaterialApp(
-        title: "Al-Qur'an AI",
+        title: "Qur'an RAG",
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          primaryColor: const Color(0xFF064C3E),
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.dark,
         initialRoute: '/',
         routes: {
-          '/': (context) => const SplashView(),
+          '/': (context) => const WelcomeView(),
           '/login': (context) => const LoginView(),
           '/chat': (context) => const ChatView(),
+          '/settings': (context) => const SettingsView(),
         },
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../config/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 
@@ -19,11 +20,11 @@ class _LoginViewState extends State<LoginView> {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Theme Colors
-  final Color primaryColor = const Color(0xFF064C18);
-  final Color backgroundDark = const Color(0xFF102215);
-  final Color inputBg = const Color(0xFF162E1C);
-  final Color inputBorder = const Color(0xFF1F4A2B);
+  // Theme Colors — aligned with AppColors palette
+  final Color primaryColor = AppColors.primary;
+  final Color backgroundDark = AppColors.backgroundDark;
+  final Color inputBg = AppColors.surfaceDark;
+  final Color inputBorder = AppColors.surfaceDark.withValues(alpha: 0.8);
 
   @override
   void dispose() {
@@ -58,12 +59,8 @@ class _LoginViewState extends State<LoginView> {
     } catch (e) {
       // Workaround: Firebase Auth Pigeon serialization bug —
       // auth bisa berhasil di server tapi response parsing crash.
-      // Cek apakah user benar-benar sudah login meskipun exception.
       if (FirebaseAuth.instance.currentUser == null) {
-        final message = e is FirebaseAuthException
-            ? (e.message ?? 'Login gagal.')
-            : 'Login gagal: ${e.toString()}';
-        _showError(message);
+        _showError(_friendlyAuthError(e));
         if (mounted) setState(() => _isLoading = false);
         return;
       }
@@ -91,10 +88,7 @@ class _LoginViewState extends State<LoginView> {
     } catch (e) {
       // Workaround: Firebase Auth Pigeon serialization bug
       if (FirebaseAuth.instance.currentUser == null) {
-        final message = e is FirebaseAuthException
-            ? (e.message ?? 'Login Google gagal.')
-            : 'Login Google gagal: ${e.toString()}';
-        _showError(message);
+        _showError(_friendlyAuthError(e));
         if (mounted) setState(() => _isLoading = false);
         return;
       }
@@ -110,43 +104,8 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  Future<void> _handleSignUp() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      _showError('Email dan password harus diisi untuk mendaftar');
-      return;
-    }
-
-    if (password.length < 6) {
-      _showError('Password minimal 6 karakter');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signUpWithEmail(email, password);
-    } catch (e) {
-      // Workaround: Firebase Auth Pigeon serialization bug
-      if (FirebaseAuth.instance.currentUser == null) {
-        final message = e is FirebaseAuthException
-            ? (e.message ?? 'Pendaftaran gagal.')
-            : 'Pendaftaran gagal: ${e.toString()}';
-        _showError(message);
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-    }
-
-    // Simpan profil ke Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) await _firestoreService.saveUserProfile(user);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, '/chat');
-    }
+  void _handleSignUp() {
+      _showError('Fitur Daftar belum tersedia.');
   }
 
   Future<void> _handleForgotPassword() async {
@@ -170,12 +129,35 @@ class _LoginViewState extends State<LoginView> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      _showError(e.message ?? 'Gagal mengirim email reset password.');
+      _showError(_friendlyAuthError(e));
     } catch (e) {
-      _showError('Gagal mengirim email reset: ${e.toString()}');
+      _showError(_friendlyAuthError(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Menerjemahkan error Firebase Auth ke pesan ramah dalam Bahasa Indonesia.
+  String _friendlyAuthError(Object e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('user-not-found') || msg.contains('no user record')) {
+      return 'Akun dengan email ini tidak ditemukan.';
+    } else if (msg.contains('wrong-password') || msg.contains('credential is incorrect')) {
+      return 'Password yang Anda masukkan salah.';
+    } else if (msg.contains('invalid-email') || msg.contains('badly formatted')) {
+      return 'Format email tidak valid.';
+    } else if (msg.contains('user-disabled')) {
+      return 'Akun ini telah dinonaktifkan.';
+    } else if (msg.contains('too-many-requests')) {
+      return 'Terlalu banyak percobaan. Coba lagi nanti.';
+    } else if (msg.contains('email-already-in-use')) {
+      return 'Email sudah terdaftar. Silakan login.';
+    } else if (msg.contains('network')) {
+      return 'Tidak ada koneksi internet.';
+    } else if (msg.contains('invalid-credential')) {
+      return 'Email atau password salah.';
+    }
+    return 'Login gagal. Silakan coba lagi.';
   }
 
   @override
@@ -201,7 +183,7 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    "Al-Qur'an AI",
+                    "Qur'an RAG",
                     style: GoogleFonts.inter(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
@@ -210,7 +192,7 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Deep spiritual study and guidance",
+                    "Sistem Tanya Jawab Al-Qur'an",
                     style: GoogleFonts.inter(
                       color: Colors.grey[400],
                       fontSize: 14,
@@ -238,13 +220,13 @@ class _LoginViewState extends State<LoginView> {
                       Text("Password", style: GoogleFonts.inter(color: Colors.grey[200], fontSize: 14)),
                       TextButton(
                         onPressed: _isLoading ? null : _handleForgotPassword,
-                        child: Text("Forgot password?", style: TextStyle(color: primaryColor, fontSize: 12)),
+                        child: Text("Lupa kata sandi?", style: TextStyle(color: primaryColor, fontSize: 12)),
                       ),
                     ],
                   ),
                   _buildTextField(
                     controller: _passwordController,
-                    hint: "Enter your password",
+                    hint: "Masukkan password Anda",
                     icon: Icons.lock_outline,
                     isPassword: true,
                   ),
@@ -265,7 +247,7 @@ class _LoginViewState extends State<LoginView> {
                               height: 24,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text("Sign In", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -279,7 +261,7 @@ class _LoginViewState extends State<LoginView> {
                     Expanded(child: Divider(color: Colors.grey[800])),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text("OR CONTINUE WITH", style: TextStyle(color: Colors.grey[600], fontSize: 10, letterSpacing: 1.2)),
+                      child: Text("ATAU LANJUTKAN DENGAN", style: TextStyle(color: Colors.grey[600], fontSize: 10, letterSpacing: 1.2)),
                     ),
                     Expanded(child: Divider(color: Colors.grey[800])),
                   ],
@@ -300,7 +282,7 @@ class _LoginViewState extends State<LoginView> {
                   children: [
                     const Icon(Icons.g_mobiledata, color: Colors.white, size: 28),
                     const SizedBox(width: 12),
-                    const Text("Continue with Google", style: TextStyle(color: Colors.white, fontSize: 14)),
+                    const Text("Lanjutkan dengan Google", style: TextStyle(color: Colors.white, fontSize: 14)),
                   ],
                 ),
               ),
@@ -310,10 +292,10 @@ class _LoginViewState extends State<LoginView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't have an account? ", style: TextStyle(color: Colors.grey[400])),
+                  Text("Belum punya akun? ", style: TextStyle(color: Colors.grey[400])),
                   GestureDetector(
                     onTap: _isLoading ? null : _handleSignUp,
-                    child: Text("Sign Up", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                    child: Text("Daftar", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
