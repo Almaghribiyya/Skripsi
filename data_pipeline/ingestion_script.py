@@ -82,7 +82,6 @@ print("2. Memulai proses akuisisi Ayat dan Tafsir secara utuh...")
 
 for surah_num in range(start_surah, 115):
     try:
-        batas_akhir = surah_metadata[surah_num]["jumlah_ayat"]
         res_ayat = requests.get(f"{BASE_URL}/ayat/local/{surah_num}", headers=HEADERS).json()
         
         if res_ayat.get("code") == 429 or res_ayat.get("res") == "error":

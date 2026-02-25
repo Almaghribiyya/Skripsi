@@ -18,10 +18,10 @@ class VerseReference {
   // Contoh fungsi untuk parsing dari JSON RAG backend Anda
   factory VerseReference.fromJson(Map<String, dynamic> json) {
     return VerseReference(
-      surahName: json['surah_name'] ?? '',
-      ayatNumber: json['ayat_number'] ?? '',
-      arabicText: json['arabic_text'] ?? '',
-      translation: json['translation'] ?? '',
+      surahName: json['surah'] ?? '',
+      ayatNumber: (json['ayat'] ?? '').toString(),
+      arabicText: json['teks_arab'] ?? '',
+      translation: json['terjemahan'] ?? '',
     );
   }
 }
@@ -51,7 +51,7 @@ class ChatSession {
   ChatSession({
     required this.id,
     required this.title,
-    this.messages = const [],
+    List<MessageModel>? messages,
     required this.createdAt,
-  });
+  }) : messages = messages ?? [];
 }

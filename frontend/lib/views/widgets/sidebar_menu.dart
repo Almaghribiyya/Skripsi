@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/chat_viewmodel.dart';
+import '../../services/auth_service.dart';
 
 class SidebarMenu extends StatelessWidget {
   const SidebarMenu({super.key});
@@ -98,6 +99,15 @@ class SidebarMenu extends StatelessWidget {
                   title: const Text("Settings", style: TextStyle(color: Colors.white)),
                   onTap: () {
                     // Siapkan navigasi ke halaman pengaturan
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.redAccent),
+                  title: const Text("Logout", style: TextStyle(color: Colors.redAccent)),
+                  onTap: () async {
+                    final navigator = Navigator.of(context);
+                    await AuthService().signOut();
+                    navigator.pushNamedAndRemoveUntil('/login', (route) => false);
                   },
                 ),
               ],

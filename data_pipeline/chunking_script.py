@@ -4,7 +4,6 @@ import sys
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient
 
 def main():
     file_path = "quran_hybrid_dataset.json"

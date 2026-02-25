@@ -3,15 +3,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-
-  // Stream untuk mendengarkan perubahan status login (Login/Logout)
-  Stream<User?> get userStateStream => _auth.authStateChanges();
-
-  // Inisialisasi GoogleSignIn (panggil sekali saat app startup)
-  Future<void> initializeGoogleSignIn() async {
-    await _googleSignIn.initialize();
-  }
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email'],
+    serverClientId:
+        '890020745806-6pbkspf5cfqsr8aajtgqeh8qkt16dvg6.apps.googleusercontent.com',
+  );
 
   // 1. Pendaftaran dengan Email & Password
   Future<UserCredential?> signUpWithEmail(String email, String password) async {
@@ -40,29 +36,24 @@ class AuthService {
   // 3. Login dengan Google
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Mulai proses login Google (authenticate menggantikan signIn di v7)
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
-        scopeHint: ['email'],
-      );
+      // Mulai proses login Google
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      // Dapatkan idToken dari authentication
-      final googleAuth = googleUser.authentication;
+      // Jika pengguna membatalkan dialog login
+      if (googleUser == null) return null;
 
-      // Dapatkan accessToken melalui authorizationClient
-      final GoogleSignInClientAuthorization clientAuth =
-          await googleUser.authorizationClient.authorizeScopes(['email']);
+      // Dapatkan token autentikasi
+      final GoogleSignInAuthentication googleAuth = 
+          await googleUser.authentication;
 
       // Buat credential Firebase
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: clientAuth.accessToken,
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       // Login ke Firebase menggunakan credential Google
       return await _auth.signInWithCredential(credential);
-    } on GoogleSignInException {
-      // Jika pengguna membatalkan dialog login atau error lainnya
-      return null;
     } catch (e) {
       rethrow;
     }

@@ -2,6 +2,7 @@ import os
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -28,13 +29,20 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global Exception: {str(exc)}")
     return JSONResponse(
         status_code=500,
-        content={"status": "error", "message": f"Terjadi kesalahan internal sistem."},
+        content={"status": "error", "message": "Terjadi kesalahan internal sistem."},
     )
 
 class QueryRequest(BaseModel):
@@ -69,7 +77,7 @@ vector_store = QdrantVectorStore(
 )
 
 llm_primary = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
+    model="gemini-2.5-flash",
     google_api_key=os.getenv("GEMINI_API_KEY"),
     temperature=0.3 
 )

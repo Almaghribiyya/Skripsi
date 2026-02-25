@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/message_model.dart';
 import 'reference_card.dart';
 
@@ -66,9 +67,31 @@ class ChatBubble extends StatelessWidget {
               padding: const EdgeInsets.only(left: 40, top: 8),
               child: Row(
                 children: [
-                  _actionButton(Icons.content_copy, "Copy"),
+                  _actionButton(Icons.content_copy, "Copy", () {
+                    Clipboard.setData(ClipboardData(text: message.text));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Teks berhasil disalin'),
+                          duration: Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }),
                   const SizedBox(width: 12),
-                  _actionButton(Icons.share, "Share"),
+                  _actionButton(Icons.share, "Share", () {
+                    Clipboard.setData(ClipboardData(text: message.text));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Teks disalin ke clipboard untuk dibagikan'),
+                          duration: Duration(seconds: 1),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }),
                 ],
               ),
             ),
@@ -85,16 +108,19 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _actionButton(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey[400]),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-        ),
-      ],
+  Widget _actionButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[400]),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+          ),
+        ],
+      ),
     );
   }
 }

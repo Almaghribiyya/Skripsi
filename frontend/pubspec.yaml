@@ -1,22 +1,20 @@
 name: frontend 
 description: "Aplikasi Pustaka Digital Al-Qur'an QnA"
-
 publish_to: 'none'
 
 environment:
   sdk: '^3.11.0' 
 
-
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
   provider: ^6.1.2
   google_fonts: ^6.2.1
   http: ^1.2.0
-  firebase_core: ^4.4.0
-  firebase_auth: ^6.1.4
-  google_sign_in: ^7.2.0
+  # Gunakan versi terbaru yang seragam
+  firebase_core: ^2.24.2 
+  firebase_auth: ^4.15.3 
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -25,8 +23,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-# Tambahan untuk Firebase
-firebase_core: ^2.24.2 
-firebase_auth: ^4.15.3 
-google_sign_in: ^6.2.1 # Sesuai saran penguji untuk Google OAuth
