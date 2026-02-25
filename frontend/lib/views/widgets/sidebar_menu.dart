@@ -193,8 +193,7 @@ class SidebarMenu extends StatelessWidget {
               children: [
                 Text(
                   'Sistem Tanya Jawab Al-Qur\'an berbasis AI '
-                  '(Retrieval-Augmented Generation) yang dikembangkan '
-                  'sebagai prototipe penelitian akademik.',
+                  '(Retrieval-Augmented Generation).',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.5,

@@ -95,7 +95,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                           ],
                   ),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Kolom teks
                       Expanded(
@@ -113,7 +113,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                               height: 1.4,
                             ),
                             decoration: InputDecoration(
-                              hintText: "Tanyakan sesuatu tentang Al-Qur'an...",
+                              hintText: "Tanya Qur'an RAG",
                               hintStyle: GoogleFonts.inter(
                                 fontSize: 16,
                                 color: isDark
@@ -131,7 +131,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                       ),
                       // Tombol kirim
                       Padding(
-                        padding: const EdgeInsets.only(right: 6, bottom: 6),
+                        padding: const EdgeInsets.only(right: 6),
                         child: _SendButton(
                           enabled: _hasText,
                           onPressed: _send,
@@ -144,7 +144,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'AI dapat menampilkan informasi yang kurang akurat, mohon verifikasi referensi penting.',
+                    'Jawaban dihasilkan dari dataset Al-Qur\'an LPMQ Kemenag.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 10,

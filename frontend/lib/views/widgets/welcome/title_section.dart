@@ -56,7 +56,7 @@ class TitleSection extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 280),
             child: Text(
-              'Pendamping spiritual Anda untuk memahami Al-Qur\'an Al-Karim.',
+              'Teman bertanya Al-Qur\'an',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 18,

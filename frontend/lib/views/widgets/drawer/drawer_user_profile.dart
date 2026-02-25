@@ -11,14 +11,12 @@ class DrawerUserProfile extends StatelessWidget {
   const DrawerUserProfile({
     super.key,
     this.displayName,
-    this.membershipLabel = 'Peneliti',
     this.avatarUrl,
     this.isOnline = true,
     required this.onLogout,
   });
 
   final String? displayName;
-  final String membershipLabel;
   final String? avatarUrl;
   final bool isOnline;
   final VoidCallback onLogout;
@@ -50,33 +48,17 @@ class DrawerUserProfile extends StatelessWidget {
               isDark: isDark,
             ),
             const SizedBox(width: 12),
-            // Name + membership
+            // Name
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : AppColors.slate900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    membershipLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: isDark ? AppColors.slate400 : AppColors.slate500,
-                    ),
-                  ),
-                ],
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : AppColors.slate900,
+                ),
               ),
             ),
             // Logout button
