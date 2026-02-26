@@ -18,7 +18,7 @@ if not API_TOKEN:
     sys.exit(1) 
 HEADERS = {
     "Authorization": API_TOKEN,
-    "user": "agusns "
+    "user": "Almaghribiyya"
 }
 
 def bersihkan_html(teks: str) -> str:
