@@ -1,5 +1,6 @@
-# Environment Variables
+# Environment Variables (semua folder)
 .env
+**/.env
 
 # Folder Database Qdrant (Sangat penting agar database bergiga-giga tidak ikut terunggah)
 qdrant_storage/

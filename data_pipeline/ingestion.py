@@ -4,15 +4,21 @@ import time
 import re
 import sys
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Memuat variabel dari data_pipeline/.env
+_env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(_env_path)
 
 BASE_URL = "https://quran-api.lpmqkemenag.id/api-alquran"
-API_TOKEN = os.getenv("KEMENAG_API_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXNzd29yZCI6Ijk3NGM2YjgxZmRiMzNlZjlkNjFjNmY0MWY1YzY5MGI2IiwiaWF0IjoxNzcyMDY2NDY5fQ.qOx32-nvRY8uizFHY7QSJGr1Fuqy38jZDg9f2fehTug") 
+API_TOKEN = os.getenv("KEMENAG_API_TOKEN")
+if not API_TOKEN:
+    print("ERROR: KEMENAG_API_TOKEN tidak ditemukan di file .env")
+    sys.exit(1) 
 HEADERS = {
     "Authorization": API_TOKEN,
-    "user": "Almaghribiyya"
+    "user": "agusns "
 }
 
 def bersihkan_html(teks: str) -> str:
