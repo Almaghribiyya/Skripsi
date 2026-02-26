@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 import '../services/nlp_service.dart';
+import '../services/firestore_service.dart';
 
 class ChatViewModel extends ChangeNotifier {
   final TextEditingController textController = TextEditingController();
   final ScrollController scrollController = ScrollController();
   final NlpService _nlpService = NlpService();
+  final FirestoreService _firestoreService = FirestoreService();
   
   // Perubahan: Mengelola multi-sesi
   List<ChatSession> sessions = [];
   String? activeSessionId;
   bool isLoading = false;
+
+  // UID pengguna yang sedang login (null jika belum login)
+  String? _currentUid;
 
   // Mendapatkan percakapan untuk sesi yang sedang aktif
   List<MessageModel> get currentChat {
@@ -25,6 +30,28 @@ class ChatViewModel extends ChangeNotifier {
     createNewSession();
   }
 
+  /// Dipanggil setelah login berhasil. Memuat sesi obrolan dari Firestore.
+  Future<void> loadUserSessions(String uid) async {
+    _currentUid = uid;
+    try {
+      final loaded = await _firestoreService.loadChatSessions(uid);
+      if (loaded.isNotEmpty) {
+        sessions = loaded;
+        activeSessionId = sessions.first.id;
+      } else {
+        // User baru — belum punya sesi, gunakan sesi default yang sudah ada
+        // Simpan sesi default ke Firestore
+        if (sessions.isNotEmpty) {
+          await _firestoreService.saveChatSession(uid, sessions.first);
+        }
+      }
+    } catch (e) {
+      debugPrint('Gagal memuat sesi obrolan: $e');
+      // Tetap gunakan sesi lokal jika gagal
+    }
+    notifyListeners();
+  }
+
   // Fitur 1: Membuat percakapan baru
   void createNewSession() {
     final newSession = ChatSession(
@@ -36,6 +63,7 @@ class ChatViewModel extends ChangeNotifier {
     sessions.insert(0, newSession); // Tambahkan di atas
     activeSessionId = newSession.id;
     notifyListeners();
+    _saveSessionToFirestore(newSession);
   }
 
   // Berpindah sesi dari Sidebar
@@ -51,12 +79,14 @@ class ChatViewModel extends ChangeNotifier {
     if (sessionIndex != -1 && newTitle.isNotEmpty) {
       sessions[sessionIndex].title = newTitle;
       notifyListeners();
+      _saveSessionToFirestore(sessions[sessionIndex]);
     }
   }
 
   // Fitur 2: Hapus sesi
   void deleteSession(String sessionId) {
     sessions.removeWhere((s) => s.id == sessionId);
+    _deleteSessionFromFirestore(sessionId);
     if (sessions.isEmpty) {
       createNewSession(); // Pastikan selalu ada minimal 1 sesi
     } else if (activeSessionId == sessionId) {
@@ -65,10 +95,11 @@ class ChatViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Reset semua data saat logout
+  // Reset data lokal saat logout (data Firestore tetap tersimpan)
   void clearAllSessions() {
     sessions.clear();
     activeSessionId = null;
+    _currentUid = null;
     textController.clear();
     createNewSession();
   }
@@ -135,7 +166,31 @@ class ChatViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
       _scrollToBottom();
+
+      // Simpan sesi ke Firestore setelah mendapat respons
+      sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
+      if (sessionIndex != -1) {
+        _saveSessionToFirestore(sessions[sessionIndex]);
+      }
     }
+  }
+
+  // ─── Firestore Helpers ──────────────────────────────────────────────
+
+  /// Simpan satu sesi ke Firestore (non-blocking)
+  void _saveSessionToFirestore(ChatSession session) {
+    if (_currentUid == null) return;
+    _firestoreService.saveChatSession(_currentUid!, session).catchError((e) {
+      debugPrint('Gagal menyimpan sesi ke Firestore: $e');
+    });
+  }
+
+  /// Hapus satu sesi dari Firestore (non-blocking)
+  void _deleteSessionFromFirestore(String sessionId) {
+    if (_currentUid == null) return;
+    _firestoreService.deleteChatSession(_currentUid!, sessionId).catchError((e) {
+      debugPrint('Gagal menghapus sesi dari Firestore: $e');
+    });
   }
 
   void _scrollToBottom() {

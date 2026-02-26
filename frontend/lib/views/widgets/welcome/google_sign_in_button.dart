@@ -74,7 +74,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton>
               const _GoogleIcon(size: 20),
               const SizedBox(width: 12),
               Text(
-                'Lanjutkan dengan Google',
+                'Masuk dengan Google',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

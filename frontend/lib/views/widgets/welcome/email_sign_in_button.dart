@@ -82,7 +82,7 @@ class _EmailSignInButtonState extends State<EmailSignInButton>
               ),
               const SizedBox(width: 12),
               Text(
-                'Lanjutkan dengan Email',
+                'Masuk / Daftar',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_URL = "https://quran-api.lpmqkemenag.id/api-alquran"
-API_TOKEN = os.getenv("KEMENAG_API_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXNzd29yZCI6IjRmNGRiZjI1N2IzNTMxODU0M2RhMzRhNzQzYjNjZWMzIiwiaWF0IjoxNzU0ODc2NzQ4fQ.UO-N5v0kCf9I6pTz4LXhGmHINWGHQmbwy6uG3vdIYpM") 
+API_TOKEN = os.getenv("KEMENAG_API_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXNzd29yZCI6Ijk3NGM2YjgxZmRiMzNlZjlkNjFjNmY0MWY1YzY5MGI2IiwiaWF0IjoxNzcyMDY2NDY5fQ.qOx32-nvRY8uizFHY7QSJGr1Fuqy38jZDg9f2fehTug") 
 HEADERS = {
     "Authorization": API_TOKEN,
-    "user": "agusns "
+    "user": "Almaghribiyya"
 }
 
 def bersihkan_html(teks: str) -> str:

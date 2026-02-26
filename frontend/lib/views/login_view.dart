@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../viewmodels/chat_viewmodel.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -13,14 +15,17 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
+  // Step 1 = email, Step 2 = password
+  int _step = 1;
   bool _isObscure = true;
   bool _isLoading = false;
+  String _emailError = '';
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Theme Colors — aligned with AppColors palette
   final Color primaryColor = AppColors.primary;
   final Color backgroundDark = AppColors.backgroundDark;
   final Color inputBg = AppColors.surfaceDark;
@@ -33,6 +38,8 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
+  // ─── Helpers ──────────────────────────────────────────────────────
+
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -44,100 +51,10 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  Future<void> _handleEmailSignIn() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      _showError('Email dan password harus diisi');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signInWithEmail(email, password);
-    } catch (e) {
-      // Workaround: Firebase Auth Pigeon serialization bug —
-      // auth bisa berhasil di server tapi response parsing crash.
-      if (FirebaseAuth.instance.currentUser == null) {
-        _showError(_friendlyAuthError(e));
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-    }
-
-    // Simpan profil ke Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) await _firestoreService.saveUserProfile(user);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, '/chat');
-    }
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w\-.]+@([\w\-]+\.)+[\w\-]{2,}$').hasMatch(email);
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isLoading = true);
-    try {
-      final result = await _authService.signInWithGoogle();
-      // User membatalkan dialog Google Sign-In
-      if (result == null && FirebaseAuth.instance.currentUser == null) {
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-    } catch (e) {
-      // Workaround: Firebase Auth Pigeon serialization bug
-      if (FirebaseAuth.instance.currentUser == null) {
-        _showError(_friendlyAuthError(e));
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-    }
-
-    // Simpan profil ke Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) await _firestoreService.saveUserProfile(user);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, '/chat');
-    }
-  }
-
-  void _handleSignUp() {
-      _showError('Fitur Daftar belum tersedia.');
-  }
-
-  Future<void> _handleForgotPassword() async {
-    final email = _emailController.text.trim();
-
-    if (email.isEmpty) {
-      _showError('Masukkan email terlebih dahulu');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Link reset password telah dikirim ke $email'),
-            backgroundColor: Colors.green[700],
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      _showError(_friendlyAuthError(e));
-    } catch (e) {
-      _showError(_friendlyAuthError(e));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  /// Menerjemahkan error Firebase Auth ke pesan ramah dalam Bahasa Indonesia.
   String _friendlyAuthError(Object e) {
     final msg = e.toString().toLowerCase();
     if (msg.contains('user-not-found') || msg.contains('no user record')) {
@@ -152,13 +69,134 @@ class _LoginViewState extends State<LoginView> {
       return 'Terlalu banyak percobaan. Coba lagi nanti.';
     } else if (msg.contains('email-already-in-use')) {
       return 'Email sudah terdaftar. Silakan login.';
+    } else if (msg.contains('weak-password')) {
+      return 'Password terlalu lemah. Minimal 6 karakter.';
     } else if (msg.contains('network')) {
       return 'Tidak ada koneksi internet.';
     } else if (msg.contains('invalid-credential')) {
       return 'Email atau password salah.';
     }
-    return 'Login gagal. Silakan coba lagi.';
+    return 'Terjadi kesalahan. Silakan coba lagi.';
   }
+
+  // ─── Step 1: Validasi Email ───────────────────────────────────────
+
+  void _handleEmailContinue() {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => _emailError = 'Email tidak boleh kosong');
+      return;
+    }
+    if (!_isValidEmail(email)) {
+      setState(() => _emailError = 'Format email tidak valid');
+      return;
+    }
+
+    setState(() {
+      _emailError = '';
+      _step = 2;
+    });
+  }
+
+  // ─── Step 2: Sign In / Sign Up ────────────────────────────────────
+
+  Future<void> _handleSubmitPassword() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (password.isEmpty) {
+      _showError('Password tidak boleh kosong');
+      return;
+    }
+    if (password.length < 6) {
+      _showError('Password minimal 6 karakter');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Coba login terlebih dahulu
+      await _authService.signInWithEmail(email, password);
+    } catch (signInError) {
+      final msg = signInError.toString().toLowerCase();
+      // Firebase modern: 'invalid-credential' mencakup user-not-found & wrong-password
+      final isNotFound = msg.contains('user-not-found') ||
+          msg.contains('no user record') ||
+          msg.contains('invalid-credential');
+
+      if (isNotFound) {
+        // Akun mungkin belum ada → coba daftarkan otomatis
+        try {
+          await _authService.signUpWithEmail(email, password);
+        } catch (signUpError) {
+          if (FirebaseAuth.instance.currentUser == null) {
+            final signUpMsg = signUpError.toString().toLowerCase();
+            // Jika sign-up gagal karena email sudah ada → password memang salah
+            if (signUpMsg.contains('email-already-in-use')) {
+              _showError('Password yang Anda masukkan salah.');
+            } else {
+              _showError(_friendlyAuthError(signUpError));
+            }
+            if (mounted) setState(() => _isLoading = false);
+            return;
+          }
+        }
+      } else if (FirebaseAuth.instance.currentUser == null) {
+        _showError(_friendlyAuthError(signInError));
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await _firestoreService.saveUserProfile(user);
+      if (mounted) {
+        await context.read<ChatViewModel>().loadUserSessions(user.uid);
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      Navigator.pushReplacementNamed(context, '/chat');
+    }
+  }
+
+  // ─── Google Sign In ───────────────────────────────────────────────
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithGoogle();
+      if (result == null && FirebaseAuth.instance.currentUser == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+    } catch (e) {
+      if (FirebaseAuth.instance.currentUser == null) {
+        _showError(_friendlyAuthError(e));
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await _firestoreService.saveUserProfile(user);
+      if (mounted) {
+        await context.read<ChatViewModel>().loadUserSessions(user.uid);
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      Navigator.pushReplacementNamed(context, '/chat');
+    }
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -169,136 +207,16 @@ class _LoginViewState extends State<LoginView> {
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
           child: Column(
             children: [
-              // Header Section
-              Column(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.auto_stories, color: primaryColor, size: 40),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    "Qur'an RAG",
-                    style: GoogleFonts.inter(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Sistem Tanya Jawab Al-Qur'an",
-                    style: GoogleFonts.inter(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+              // Header
+              _buildHeader(),
               const SizedBox(height: 40),
-
-              // Form Section
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Email", style: GoogleFonts.inter(color: Colors.grey[200], fontSize: 14)),
-                  const SizedBox(height: 8),
-                  _buildTextField(
-                    controller: _emailController,
-                    hint: "name@example.com",
-                    icon: Icons.mail_outline,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Password", style: GoogleFonts.inter(color: Colors.grey[200], fontSize: 14)),
-                      TextButton(
-                        onPressed: _isLoading ? null : _handleForgotPassword,
-                        child: Text("Lupa kata sandi?", style: TextStyle(color: primaryColor, fontSize: 12)),
-                      ),
-                    ],
-                  ),
-                  _buildTextField(
-                    controller: _passwordController,
-                    hint: "Masukkan password Anda",
-                    icon: Icons.lock_outline,
-                    isPassword: true,
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _handleEmailSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Text("Masuk", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-
+              // Form — step 1 or step 2
+              _step == 1 ? _buildEmailStep() : _buildPasswordStep(),
               // Divider
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.grey[800])),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text("ATAU LANJUTKAN DENGAN", style: TextStyle(color: Colors.grey[600], fontSize: 10, letterSpacing: 1.2)),
-                    ),
-                    Expanded(child: Divider(color: Colors.grey[800])),
-                  ],
-                ),
-              ),
-
-              // Social Login
-              OutlinedButton(
-                onPressed: _isLoading ? null : _handleGoogleSignIn,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 54),
-                  side: BorderSide(color: Colors.grey[800]!),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: inputBg.withValues(alpha: 0.5),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.g_mobiledata, color: Colors.white, size: 28),
-                    const SizedBox(width: 12),
-                    const Text("Lanjutkan dengan Google", style: TextStyle(color: Colors.white, fontSize: 14)),
-                  ],
-                ),
-              ),
-
+              _buildDivider(),
+              // Google Sign In
+              _buildGoogleButton(),
               const SizedBox(height: 32),
-              // Footer
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Belum punya akun? ", style: TextStyle(color: Colors.grey[400])),
-                  GestureDetector(
-                    onTap: _isLoading ? null : _handleSignUp,
-                    child: Text("Daftar", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -306,31 +224,235 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String hint, required IconData icon, bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword ? _isObscure : false,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: inputBg,
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-        prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
-        suffixIcon: isPassword 
-          ? IconButton(
+  // ─── Header ───────────────────────────────────────────────────────
+
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: primaryColor.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.auto_stories, color: primaryColor, size: 40),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          "Qur'an RAG",
+          style: GoogleFonts.inter(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Sistem Tanya Jawab Al-Qur'an",
+          style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
+        ),
+      ],
+    );
+  }
+
+  // ─── Step 1: Email ────────────────────────────────────────────────
+
+  Widget _buildEmailStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Email", style: GoogleFonts.inter(color: Colors.grey[200], fontSize: 14)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          style: const TextStyle(color: Colors.white),
+          onSubmitted: (_) => _handleEmailContinue(),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: inputBg,
+            hintText: "name@example.com",
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+            prefixIcon: Icon(Icons.mail_outline, color: Colors.grey[400], size: 20),
+            errorText: _emailError.isNotEmpty ? _emailError : null,
+            errorStyle: const TextStyle(color: Colors.redAccent),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _emailError.isNotEmpty ? Colors.redAccent : inputBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _emailError.isNotEmpty ? Colors.redAccent : primaryColor),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent),
+            ),
+          ),
+          onChanged: (_) {
+            if (_emailError.isNotEmpty) setState(() => _emailError = '');
+          },
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: _handleEmailContinue,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              "Lanjutkan",
+              style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Step 2: Password ─────────────────────────────────────────────
+
+  Widget _buildPasswordStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Email preview (bisa klik untuk kembali ke step 1)
+        GestureDetector(
+          onTap: () => setState(() {
+            _step = 1;
+            _passwordController.clear();
+          }),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: inputBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: inputBorder),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.mail_outline, color: Colors.grey[400], size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _emailController.text.trim(),
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.edit, color: primaryColor, size: 18),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text("Password", style: GoogleFonts.inter(color: Colors.grey[200], fontSize: 14)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _passwordController,
+          obscureText: _isObscure,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _handleSubmitPassword(),
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: inputBg,
+            hintText: "Masukkan password Anda",
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+            prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[400], size: 20),
+            suffixIcon: IconButton(
               icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility, color: Colors.grey[400]),
               onPressed: () => setState(() => _isObscure = !_isObscure),
-            ) 
-          : null,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: inputBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: inputBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryColor),
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor),
+        const SizedBox(height: 8),
+        Text(
+          'Jika belum memiliki akun, akun baru akan dibuat otomatis.',
+          style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12),
         ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _handleSubmitPassword,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : Text(
+                    "Masuk / Daftar",
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Divider ──────────────────────────────────────────────────────
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: Colors.grey[800])),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text("ATAU", style: TextStyle(color: Colors.grey[600], fontSize: 10, letterSpacing: 1.2)),
+          ),
+          Expanded(child: Divider(color: Colors.grey[800])),
+        ],
+      ),
+    );
+  }
+
+  // ─── Google Button ────────────────────────────────────────────────
+
+  Widget _buildGoogleButton() {
+    return OutlinedButton(
+      onPressed: _isLoading ? null : _handleGoogleSignIn,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 54),
+        side: BorderSide(color: Colors.grey[800]!),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: inputBg.withValues(alpha: 0.5),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.g_mobiledata, color: Colors.white, size: 28),
+          SizedBox(width: 12),
+          Text("Masuk dengan Google", style: TextStyle(color: Colors.white, fontSize: 14)),
+        ],
       ),
     );
   }

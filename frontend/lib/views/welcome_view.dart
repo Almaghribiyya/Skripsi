@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../viewmodels/chat_viewmodel.dart';
 import 'widgets/welcome/logo_glow_widget.dart';
 import 'widgets/welcome/title_section.dart';
 import 'widgets/welcome/image_grid_decoration.dart';
@@ -42,10 +44,11 @@ class _WelcomeViewState extends State<WelcomeView>
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
     // Auto-redirect if already signed in
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null && mounted) {
-        Navigator.pushReplacementNamed(context, '/chat');
+        await context.read<ChatViewModel>().loadUserSessions(user.uid);
+        if (mounted) Navigator.pushReplacementNamed(context, '/chat');
       }
     });
   }
@@ -89,7 +92,12 @@ class _WelcomeViewState extends State<WelcomeView>
     }
 
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) await _firestoreService.saveUserProfile(user);
+    if (user != null) {
+      await _firestoreService.saveUserProfile(user);
+      if (mounted) {
+        await context.read<ChatViewModel>().loadUserSessions(user.uid);
+      }
+    }
 
     if (mounted) {
       setState(() => _isLoading = false);

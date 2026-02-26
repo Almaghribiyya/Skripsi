@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/app_theme.dart';
+import '../../models/message_model.dart';
 import '../../viewmodels/chat_viewmodel.dart';
 import '../../services/auth_service.dart';
 import 'drawer/drawer_header_new_chat.dart';
@@ -13,13 +14,48 @@ import 'drawer/drawer_user_profile.dart';
 /// Production-ready chat history navigation drawer.
 ///
 /// Structure (top → bottom):
-///   DrawerHeaderNewChat → ChatSessionGroupedList (scrollable, time-grouped)
+///   DrawerHeaderNewChat → Search Bar → ChatSessionGroupedList (scrollable, time-grouped)
 ///   → DrawerFooterNavigation → DrawerUserProfile
 ///
 /// Integrates with [ChatViewModel] via Provider and exposes all required
 /// callbacks: session selection, new chat, rename, delete, logout.
-class SidebarMenu extends StatelessWidget {
+class SidebarMenu extends StatefulWidget {
   const SidebarMenu({super.key});
+
+  @override
+  State<SidebarMenu> createState() => _SidebarMenuState();
+}
+
+class _SidebarMenuState extends State<SidebarMenu> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Filter sessions by title or message content matching the search query.
+  List<ChatSession> _filterSessions(List<ChatSession> sessions) {
+    if (_searchQuery.isEmpty) return sessions;
+    return sessions.where((session) {
+      // Match session title
+      if (session.title.toLowerCase().contains(_searchQuery)) return true;
+      // Match message content
+      return session.messages.any(
+        (msg) => msg.text.toLowerCase().contains(_searchQuery),
+      );
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,15 +83,21 @@ class SidebarMenu extends StatelessWidget {
         child: SafeArea(
           child: Consumer<ChatViewModel>(
             builder: (context, viewModel, child) {
+              final filteredSessions = _filterSessions(viewModel.sessions);
+
               return Column(
                 children: [
                   // ── Header: New Chat button ──
                   DrawerHeaderNewChat(
                     onPressed: () {
                       viewModel.createNewSession();
+                      _searchController.clear();
                       Navigator.pop(context);
                     },
                   ),
+
+                  // ── Search bar ──
+                  _buildSearchBar(isDark),
 
                   // ── Scrollable grouped chat history ──
                   Expanded(
@@ -64,10 +106,11 @@ class SidebarMenu extends StatelessWidget {
                       radius: const Radius.circular(3),
                       thumbVisibility: false,
                       child: ChatSessionGroupedList(
-                        sessions: viewModel.sessions,
+                        sessions: filteredSessions,
                         activeSessionId: viewModel.activeSessionId,
                         onSessionSelected: (sessionId) {
                           viewModel.switchSession(sessionId);
+                          _searchController.clear();
                           Navigator.pop(context);
                         },
                         onRenameSession: (sessionId) {
@@ -141,6 +184,56 @@ class SidebarMenu extends StatelessWidget {
                 ],
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Search bar widget for filtering chat sessions.
+  Widget _buildSearchBar(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: TextField(
+        controller: _searchController,
+        style: GoogleFonts.inter(
+          fontSize: 14,
+          color: isDark ? Colors.white : AppColors.slate900,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Telusuri percakapan...',
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: isDark ? AppColors.slate500 : AppColors.slate400,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            size: 20,
+            color: isDark ? AppColors.slate500 : AppColors.slate400,
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: isDark ? AppColors.slate400 : AppColors.slate500,
+                  ),
+                  onPressed: () => _searchController.clear(),
+                  splashRadius: 18,
+                )
+              : null,
+          filled: true,
+          fillColor: isDark
+              ? AppColors.surfaceDark.withValues(alpha: 0.5)
+              : AppColors.slate100,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1),
           ),
         ),
       ),
