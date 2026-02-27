@@ -51,6 +51,35 @@ class _ChatViewState extends State<ChatView> {
                 // Scrollable chat area
                 Consumer<ChatViewModel>(
                   builder: (context, vm, _) {
+                    // Error SnackBar — ditampilkan sekali lalu di-clear
+                    if (vm.lastError != null) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!context.mounted) return;
+                        final error = vm.lastError;
+                        final needsReLogin = vm.requiresReLogin;
+                        vm.clearError();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(error ?? 'Terjadi kesalahan'),
+                            backgroundColor: Colors.red[700],
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 4),
+                            action: needsReLogin
+                                ? SnackBarAction(
+                                    label: 'Login Ulang',
+                                    textColor: Colors.white,
+                                    onPressed: () {
+                                      Navigator.pushReplacementNamed(
+                                          context, '/');
+                                    },
+                                  )
+                                : null,
+                          ),
+                        );
+                      });
+                    }
+
                     final messages = vm.currentChat;
                     return ListView.builder(
                       controller: vm.scrollController,
@@ -58,23 +87,28 @@ class _ChatViewState extends State<ChatView> {
                         left: 16,
                         right: 16,
                         top: 8,
-                        bottom: 140, // space for floating input
+                        bottom: 140,
                       ),
                       physics: const BouncingScrollPhysics(
                         parent: AlwaysScrollableScrollPhysics(),
                       ),
                       itemCount: messages.length + (vm.isLoading ? 1 : 0),
                       itemBuilder: (context, index) {
-                        // Typing indicator
                         if (index == messages.length) {
                           return _buildTypingIndicator(context);
                         }
                         final msg = messages[index];
                         if (msg.sender == MessageSender.user) {
+                          // Cari apakah ini user message terakhir
+                          final isLast = _isLastUserMessage(messages, index);
                           return UserMessageBubble(
                             text: msg.text,
                             timestamp: msg.timestamp,
                             avatarUrl: user?.photoURL,
+                            isLastUserMessage: isLast,
+                            onEdit: isLast
+                                ? () => vm.editLastUserMessage()
+                                : null,
                           );
                         }
                         return AiMessageBubble(message: msg);
@@ -95,6 +129,16 @@ class _ChatViewState extends State<ChatView> {
         ],
       ),
     );
+  }
+
+  /// Apakah pesan pada index ini adalah user message terakhir di list.
+  bool _isLastUserMessage(List<MessageModel> messages, int index) {
+    for (int i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender == MessageSender.user) {
+        return i == index;
+      }
+    }
+    return false;
   }
 
   /// AI typing indicator (three animated dots).

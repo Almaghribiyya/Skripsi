@@ -286,7 +286,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
               children: [
                 Text(
                   'Sistem Tanya Jawab Al-Qur\'an berbasis AI '
-                  '(Retrieval-Augmented Generation).',
+                  '(Didukung oleh teknologi Retrieval-Augmented Generation).',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     height: 1.5,

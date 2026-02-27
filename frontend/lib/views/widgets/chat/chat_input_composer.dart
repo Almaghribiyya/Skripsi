@@ -76,6 +76,60 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Banner edit mode
+                Consumer<ChatViewModel>(
+                  builder: (context, vm, _) {
+                    if (!vm.isEditingMessage) return const SizedBox.shrink();
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.primary.withValues(alpha: 0.15)
+                            : AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.30),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Mengedit pesan',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => vm.cancelEditMode(),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.gray500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 // Kontainer input
                 Container(
                   decoration: BoxDecoration(
@@ -129,12 +183,21 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                           ),
                         ),
                       ),
-                      // Tombol kirim
+                      // Tombol kirim / stop
                       Padding(
                         padding: const EdgeInsets.only(right: 6),
-                        child: _SendButton(
-                          enabled: _hasText,
-                          onPressed: _send,
+                        child: Consumer<ChatViewModel>(
+                          builder: (context, vm, _) {
+                            if (vm.isLoading) {
+                              return _StopButton(
+                                onPressed: () => vm.stopResponse(),
+                              );
+                            }
+                            return _SendButton(
+                              enabled: _hasText,
+                              onPressed: _send,
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -216,6 +279,85 @@ class _SendButtonState extends State<_SendButton> {
                 : null,
           ),
           child: const Icon(Icons.send, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated stop button shown during AI response generation.
+/// Uses a pulsing animation to indicate active processing, similar to
+/// Gemini/ChatGPT mobile.
+class _StopButton extends StatefulWidget {
+  const _StopButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  State<_StopButton> createState() => _StopButtonState();
+}
+
+class _StopButtonState extends State<_StopButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseCtrl;
+  late final Animation<double> _pulseAnim;
+  double _scale = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.15, end: 0.45).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails _) => setState(() => _scale = 0.90);
+  void _onTapUp(TapUpDetails _) {
+    setState(() => _scale = 1.0);
+    widget.onPressed();
+  }
+
+  void _onTapCancel() => setState(() => _scale = 1.0);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 80),
+        child: AnimatedBuilder(
+          animation: _pulseAnim,
+          builder: (context, child) {
+            return Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withValues(alpha: _pulseAnim.value),
+                    blurRadius: 12,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.stop, color: Colors.white, size: 22),
+            );
+          },
         ),
       ),
     );

@@ -1,28 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/app_theme.dart';
 
 /// User message bubble — right-aligned with transparent bg + border.
 ///
-/// Matches HTML: `rounded-2xl rounded-tr-sm bg-transparent border`
-/// with avatar on the right and hover-visible timestamp.
+/// Supports copy on all prompts and edit on the last user prompt
+/// (similar to Gemini/ChatGPT mobile).
 class UserMessageBubble extends StatelessWidget {
   const UserMessageBubble({
     super.key,
     required this.text,
     required this.timestamp,
     this.avatarUrl,
+    this.isLastUserMessage = false,
+    this.onEdit,
   });
 
   final String text;
   final DateTime timestamp;
   final String? avatarUrl;
 
+  /// Whether this is the last user message in the conversation.
+  final bool isLastUserMessage;
+
+  /// Called when user taps the edit button (only shown on last user message).
+  final VoidCallback? onEdit;
+
   String get _timeLabel {
     final h = timestamp.hour.toString().padLeft(2, '0');
     final m = timestamp.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+
+  void _handleCopy(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Prompt berhasil disalin'),
+        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -67,14 +87,39 @@ class UserMessageBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
+                // Action row: timestamp + copy + edit (last only)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
-                  child: Text(
-                    _timeLabel,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: isDark ? AppColors.gray400 : AppColors.gray500,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _timeLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color:
+                              isDark ? AppColors.gray400 : AppColors.gray500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Copy button — always shown
+                      _SmallActionButton(
+                        icon: Icons.content_copy,
+                        tooltip: 'Salin',
+                        isDark: isDark,
+                        onTap: () => _handleCopy(context),
+                      ),
+                      // Edit button — only on last user message
+                      if (isLastUserMessage && onEdit != null) ...[
+                        const SizedBox(width: 4),
+                        _SmallActionButton(
+                          icon: Icons.edit,
+                          tooltip: 'Edit',
+                          isDark: isDark,
+                          onTap: onEdit!,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
@@ -116,6 +161,38 @@ class UserMessageBubble extends StatelessWidget {
                 size: 16,
                 color: isDark ? AppColors.gray400 : AppColors.gray500,
               ),
+      ),
+    );
+  }
+}
+
+/// Small icon-only action button used below user message bubbles.
+class _SmallActionButton extends StatelessWidget {
+  const _SmallActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDark ? AppColors.gray400 : AppColors.gray500;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(icon, size: 16, color: color),
+        ),
       ),
     );
   }

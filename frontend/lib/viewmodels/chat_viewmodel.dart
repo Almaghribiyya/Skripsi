@@ -1,23 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../models/message_model.dart';
 import '../services/nlp_service.dart';
 import '../services/firestore_service.dart';
 
+/// ViewModel utama untuk fitur chat.
+///
+/// Mengelola: multi-sesi, pengiriman pesan, loading state,
+/// error handling yang terdiferensiasi, dan persistensi Firestore.
 class ChatViewModel extends ChangeNotifier {
   final TextEditingController textController = TextEditingController();
   final ScrollController scrollController = ScrollController();
   final NlpService _nlpService = NlpService();
   final FirestoreService _firestoreService = FirestoreService();
   
-  // Perubahan: Mengelola multi-sesi
   List<ChatSession> sessions = [];
   String? activeSessionId;
   bool isLoading = false;
 
-  // UID pengguna yang sedang login (null jika belum login)
+  /// Pesan error terakhir — di-consume oleh UI untuk menampilkan SnackBar.
+  /// Setelah ditampilkan, UI harus memanggil [clearError].
+  String? lastError;
+
+  /// Flag apakah error terakhir memerlukan re-login.
+  bool requiresReLogin = false;
+
+  /// Flag edit mode — true saat pengguna mengedit prompt lama.
+  bool isEditingMessage = false;
+
+  /// HTTP client aktif — untuk membatalkan request yang sedang berjalan.
+  http.Client? _activeClient;
+
   String? _currentUid;
 
-  // Mendapatkan percakapan untuk sesi yang sedang aktif
   List<MessageModel> get currentChat {
     if (activeSessionId == null) return [];
     final idx = sessions.indexWhere((s) => s.id == activeSessionId);
@@ -26,8 +41,13 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   ChatViewModel() {
-    // Buat sesi default saat aplikasi pertama kali dibuka
     createNewSession();
+  }
+
+  /// Reset error state setelah ditampilkan oleh UI.
+  void clearError() {
+    lastError = null;
+    requiresReLogin = false;
   }
 
   /// Dipanggil setelah login berhasil. Memuat sesi obrolan dari Firestore.
@@ -39,20 +59,16 @@ class ChatViewModel extends ChangeNotifier {
         sessions = loaded;
         activeSessionId = sessions.first.id;
       } else {
-        // User baru — belum punya sesi, gunakan sesi default yang sudah ada
-        // Simpan sesi default ke Firestore
         if (sessions.isNotEmpty) {
           await _firestoreService.saveChatSession(uid, sessions.first);
         }
       }
     } catch (e) {
       debugPrint('Gagal memuat sesi obrolan: $e');
-      // Tetap gunakan sesi lokal jika gagal
     }
     notifyListeners();
   }
 
-  // Fitur 1: Membuat percakapan baru
   void createNewSession() {
     final newSession = ChatSession(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -60,20 +76,18 @@ class ChatViewModel extends ChangeNotifier {
       messages: [],
       createdAt: DateTime.now(),
     );
-    sessions.insert(0, newSession); // Tambahkan di atas
+    sessions.insert(0, newSession);
     activeSessionId = newSession.id;
     notifyListeners();
     _saveSessionToFirestore(newSession);
   }
 
-  // Berpindah sesi dari Sidebar
   void switchSession(String sessionId) {
     activeSessionId = sessionId;
     notifyListeners();
     _scrollToBottom();
   }
 
-  // Fitur 2: Ganti nama sesi
   void renameSession(String sessionId, String newTitle) {
     final sessionIndex = sessions.indexWhere((s) => s.id == sessionId);
     if (sessionIndex != -1 && newTitle.isNotEmpty) {
@@ -83,41 +97,96 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
-  // Fitur 2: Hapus sesi
   void deleteSession(String sessionId) {
     sessions.removeWhere((s) => s.id == sessionId);
     _deleteSessionFromFirestore(sessionId);
     if (sessions.isEmpty) {
-      createNewSession(); // Pastikan selalu ada minimal 1 sesi
+      createNewSession();
     } else if (activeSessionId == sessionId) {
-      activeSessionId = sessions.first.id; // Pindah ke sesi teratas
+      activeSessionId = sessions.first.id;
     }
     notifyListeners();
   }
 
-  // Reset data lokal saat logout (data Firestore tetap tersimpan)
   void clearAllSessions() {
     sessions.clear();
     activeSessionId = null;
     _currentUid = null;
     textController.clear();
+    isEditingMessage = false;
     createNewSession();
+  }
+
+  /// Edit prompt pengguna terakhir — mirip Gemini/ChatGPT mobile.
+  ///
+  /// Menghapus pesan user terakhir beserta respons AI-nya (jika ada),
+  /// lalu memasukkan teks prompt ke input field agar bisa diedit.
+  void editLastUserMessage() {
+    if (activeSessionId == null) return;
+    final sessionIndex = sessions.indexWhere((s) => s.id == activeSessionId);
+    if (sessionIndex == -1) return;
+
+    final messages = sessions[sessionIndex].messages;
+    if (messages.isEmpty) return;
+
+    // Cari user message paling akhir
+    int lastUserIdx = -1;
+    for (int i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender == MessageSender.user) {
+        lastUserIdx = i;
+        break;
+      }
+    }
+    if (lastUserIdx == -1) return;
+
+    final editText = messages[lastUserIdx].text;
+
+    // Hapus pesan dari lastUserIdx sampai akhir (user msg + AI response)
+    messages.removeRange(lastUserIdx, messages.length);
+
+    // Masukkan teks ke input field
+    textController.text = editText;
+    textController.selection = TextSelection.fromPosition(
+      TextPosition(offset: editText.length),
+    );
+
+    isEditingMessage = true;
+    notifyListeners();
+
+    // Simpan perubahan ke Firestore
+    _saveSessionToFirestore(sessions[sessionIndex]);
+  }
+
+  /// Batalkan mode edit.
+  void cancelEditMode() {
+    isEditingMessage = false;
+    textController.clear();
+    notifyListeners();
+  }
+
+  /// Menghentikan response yang sedang di-generate — mirip Gemini/ChatGPT.
+  ///
+  /// Menutup HTTP client aktif sehingga request dibatalkan,
+  /// lalu menambahkan pesan AI partial "Response dihentikan".
+  void stopResponse() {
+    if (!isLoading || _activeClient == null) return;
+    _activeClient!.close();
+    _activeClient = null;
+    // State akan di-update oleh catch block di sendMessage
   }
 
   void sendMessage() async {
     final text = textController.text.trim();
     if (text.isEmpty || activeSessionId == null) return;
 
-    // Capture the target session ID — use ID-based lookup throughout
-    // to stay safe across async boundaries.
     final targetSessionId = activeSessionId!;
-
     int sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
     if (sessionIndex == -1) return;
 
-    // Ganti judul otomatis jika ini pesan pertama
+    // Auto-title dari pesan pertama
     if (sessions[sessionIndex].messages.isEmpty) {
-      sessions[sessionIndex].title = text.length > 20 ? "${text.substring(0, 20)}..." : text;
+      sessions[sessionIndex].title =
+          text.length > 25 ? "${text.substring(0, 25)}..." : text;
     }
 
     sessions[sessionIndex].messages.add(MessageModel(
@@ -129,19 +198,29 @@ class ChatViewModel extends ChangeNotifier {
     
     textController.clear();
     isLoading = true;
+    isEditingMessage = false;
+    lastError = null;
+    requiresReLogin = false;
     notifyListeners();
     _scrollToBottom();
 
-    try {
-      final response = await _nlpService.getAnswerFromVectorDB(text);
+    // Buat client baru untuk request ini (agar bisa di-cancel)
+    _activeClient = http.Client();
 
-      // Re-lookup after async gap — session may have been deleted/reordered
+    try {
+      final response = await _nlpService.getAnswerFromVectorDB(
+        text,
+        client: _activeClient,
+      );
+
       sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
-      if (sessionIndex == -1) return; // Session was deleted during request
+      if (sessionIndex == -1) return;
 
       List<VerseReference> refs = [];
       if (response['references'] != null) {
-        refs = (response['references'] as List).map((data) => VerseReference.fromJson(data)).toList();
+        refs = (response['references'] as List)
+            .map((data) => VerseReference.fromJson(data))
+            .toList();
       }
 
       sessions[sessionIndex].messages.add(MessageModel(
@@ -151,23 +230,61 @@ class ChatViewModel extends ChangeNotifier {
         timestamp: DateTime.now(),
         verseReferences: refs,
       ));
-    } catch (e) {
-      // Re-lookup after async gap
+
+    } on NlpCancelledException {
+      // User menekan tombol stop — tidak perlu menambah pesan error
       sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
       if (sessionIndex == -1) return;
 
       sessions[sessionIndex].messages.add(MessageModel(
         id: DateTime.now().toString(),
-        text: "Maaf, terjadi kesalahan saat menghubungi server.",
+        text: 'Response dihentikan.',
         sender: MessageSender.ai,
         timestamp: DateTime.now(),
       ));
+
+    } on NlpException catch (e) {
+      // Error terdiferensiasi dari NlpService
+      sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
+      if (sessionIndex == -1) return;
+
+      // Jika 401, flag untuk re-login
+      if (e.statusCode == 401) {
+        requiresReLogin = true;
+        lastError = e.message;
+      } else {
+        lastError = e.message;
+      }
+
+      sessions[sessionIndex].messages.add(MessageModel(
+        id: DateTime.now().toString(),
+        text: e.message,
+        sender: MessageSender.ai,
+        timestamp: DateTime.now(),
+      ));
+
+    } catch (e) {
+      // Fallback untuk error tak terduga
+      sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
+      if (sessionIndex == -1) return;
+
+      const fallbackMsg = "Maaf, terjadi kesalahan yang tidak terduga. "
+          "Silakan coba lagi.";
+      lastError = fallbackMsg;
+
+      sessions[sessionIndex].messages.add(MessageModel(
+        id: DateTime.now().toString(),
+        text: fallbackMsg,
+        sender: MessageSender.ai,
+        timestamp: DateTime.now(),
+      ));
+
     } finally {
+      _activeClient = null;
       isLoading = false;
       notifyListeners();
       _scrollToBottom();
 
-      // Simpan sesi ke Firestore setelah mendapat respons
       sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
       if (sessionIndex != -1) {
         _saveSessionToFirestore(sessions[sessionIndex]);
