@@ -15,7 +15,7 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  // Step 1 = email, Step 2 = password
+  // step 1 = email, step 2 = password
   int _step = 1;
   bool _isObscure = true;
   bool _isLoading = false;
@@ -38,7 +38,7 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────
+  // fungsi-fungsi pembantu
 
   void _showError(String message) {
     if (!mounted) return;
@@ -79,7 +79,7 @@ class _LoginViewState extends State<LoginView> {
     return 'Terjadi kesalahan. Silakan coba lagi.';
   }
 
-  // ─── Step 1: Validasi Email ───────────────────────────────────────
+  // validasi email di step 1
 
   void _handleEmailContinue() {
     final email = _emailController.text.trim();
@@ -99,7 +99,7 @@ class _LoginViewState extends State<LoginView> {
     });
   }
 
-  // ─── Step 2: Sign In / Sign Up ────────────────────────────────────
+  // proses login atau daftar di step 2
 
   Future<void> _handleSubmitPassword() async {
     final email = _emailController.text.trim();
@@ -117,23 +117,23 @@ class _LoginViewState extends State<LoginView> {
     setState(() => _isLoading = true);
 
     try {
-      // Coba login terlebih dahulu
+      // coba login dulu
       await _authService.signInWithEmail(email, password);
     } catch (signInError) {
       final msg = signInError.toString().toLowerCase();
-      // Firebase modern: 'invalid-credential' mencakup user-not-found & wrong-password
+      // di Firebase modern, 'invalid-credential' mencakup user-not-found & wrong-password
       final isNotFound = msg.contains('user-not-found') ||
           msg.contains('no user record') ||
           msg.contains('invalid-credential');
 
       if (isNotFound) {
-        // Akun mungkin belum ada → coba daftarkan otomatis
+        // akun mungkin belum ada, coba daftarkan otomatis
         try {
           await _authService.signUpWithEmail(email, password);
         } catch (signUpError) {
           if (FirebaseAuth.instance.currentUser == null) {
             final signUpMsg = signUpError.toString().toLowerCase();
-            // Jika sign-up gagal karena email sudah ada → password memang salah
+            // kalau sign-up gagal karena email sudah ada, berarti password-nya salah
             if (signUpMsg.contains('email-already-in-use')) {
               _showError('Password yang Anda masukkan salah.');
             } else {
@@ -164,7 +164,7 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  // ─── Google Sign In ───────────────────────────────────────────────
+  // login pakai Google
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
@@ -196,7 +196,7 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  // ─── Build ────────────────────────────────────────────────────────
+  // build utama
 
   @override
   Widget build(BuildContext context) {
@@ -207,14 +207,14 @@ class _LoginViewState extends State<LoginView> {
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
           child: Column(
             children: [
-              // Header
+              // bagian header
               _buildHeader(),
               const SizedBox(height: 40),
-              // Form — step 1 or step 2
+              // form sesuai step 1 atau 2
               _step == 1 ? _buildEmailStep() : _buildPasswordStep(),
-              // Divider
+              // pemisah
               _buildDivider(),
-              // Google Sign In
+              // tombol login Google
               _buildGoogleButton(),
               const SizedBox(height: 32),
             ],
@@ -224,7 +224,7 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  // ─── Header ───────────────────────────────────────────────────────
+  // widget header
 
   Widget _buildHeader() {
     return Column(
@@ -256,7 +256,7 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  // ─── Step 1: Email ────────────────────────────────────────────────
+  // widget step 1: input email
 
   Widget _buildEmailStep() {
     return Column(
@@ -319,13 +319,13 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  // ─── Step 2: Password ─────────────────────────────────────────────
+  // widget step 2: input password
 
   Widget _buildPasswordStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Email preview (bisa klik untuk kembali ke step 1)
+        // preview email, bisa diklik buat balik ke step 1
         GestureDetector(
           onTap: () => setState(() {
             _step = 1;
@@ -417,7 +417,7 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  // ─── Divider ──────────────────────────────────────────────────────
+  // widget pemisah
 
   Widget _buildDivider() {
     return Padding(
@@ -435,7 +435,7 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  // ─── Google Button ────────────────────────────────────────────────
+  // tombol Google
 
   Widget _buildGoogleButton() {
     return OutlinedButton(

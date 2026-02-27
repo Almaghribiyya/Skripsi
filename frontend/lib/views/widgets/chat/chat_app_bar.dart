@@ -3,9 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/app_theme.dart';
 
-/// Sticky top app bar matching the HTML header.
-///
-/// Menu button (left) • "Quran AI" title (center) • Profile avatar (right).
+// app bar sticky di atas layar
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ChatAppBar({
     super.key,
@@ -43,7 +41,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               children: [
-                // Menu button
+                // tombol menu
                 IconButton(
                   onPressed: onMenuPressed,
                   icon: Icon(
@@ -53,7 +51,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   splashRadius: 20,
                   tooltip: 'Menu',
                 ),
-                // Title
+                // judul
                 Expanded(
                   child: Text(
                     'Qur\'an RAG',
@@ -66,7 +64,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                 ),
-                // Profile avatar
+                // avatar profil
                 GestureDetector(
                   onTap: onProfilePressed,
                   child: Container(

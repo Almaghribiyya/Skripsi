@@ -4,7 +4,7 @@ import '../../../config/app_theme.dart';
 import '../../../models/message_model.dart';
 import 'chat_session_tile.dart';
 
-/// Time-based grouping categories for chat sessions.
+// kategori pengelompokan sesi chat berdasarkan waktu
 enum _SessionGroup {
   today('Hari Ini'),
   previous7Days('7 Hari Terakhir'),
@@ -15,10 +15,8 @@ enum _SessionGroup {
   final String label;
 }
 
-/// Groups sessions by time relative to [now] and renders them as
-/// labeled sections with [ChatSessionTile] items.
-///
-/// Grouping is computed at runtime — never hardcoded.
+// mengelompokkan sesi berdasarkan waktu relatif terhadap sekarang
+// dan menampilkannya sebagai seksi berlabel dengan ChatSessionTile
 class ChatSessionGroupedList extends StatelessWidget {
   const ChatSessionGroupedList({
     super.key,
@@ -35,7 +33,7 @@ class ChatSessionGroupedList extends StatelessWidget {
   final void Function(String sessionId) onRenameSession;
   final void Function(String sessionId) onDeleteSession;
 
-  /// Compute grouping buckets from session timestamps.
+  // hitung bucket pengelompokan dari timestamp sesi
   Map<_SessionGroup, List<ChatSession>> _groupSessions() {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
@@ -69,7 +67,7 @@ class ChatSessionGroupedList extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final groups = _groupSessions();
 
-    // Ordered iteration through enum values to maintain section order
+    // iterasi berurut sesuai enum biar urutan seksi tetap konsisten
     final orderedGroups = _SessionGroup.values
         .where((g) => groups.containsKey(g))
         .toList();
@@ -91,7 +89,7 @@ class ChatSessionGroupedList extends StatelessWidget {
       );
     }
 
-    // Flatten into a single scrollable list with section headers
+    // ratakan jadi satu list scrollable dengan header seksi
     final List<Widget> children = [];
     for (final group in orderedGroups) {
       final sessionsInGroup = groups[group]!;
@@ -117,7 +115,7 @@ class ChatSessionGroupedList extends StatelessWidget {
   }
 }
 
-/// Section header label (e.g., "Today", "Previous 7 Days").
+// label header seksi (misal "HARI INI", "7 HARI TERAKHIR")
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.label, required this.isDark});
 

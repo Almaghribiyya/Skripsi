@@ -5,19 +5,19 @@ import '../models/message_model.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  /// Menyimpan atau memperbarui profil pengguna di koleksi 'users'.
-  /// Dipanggil setelah login/register berhasil.
+  // simpan atau update profil pengguna di koleksi 'users'.
+  // dipanggil setelah login atau register berhasil.
   Future<void> saveUserProfile(User user) async {
     final docRef = _db.collection('users').doc(user.uid);
     final doc = await docRef.get();
 
     if (doc.exists) {
-      // User lama → update lastLogin saja
+      // user lama, update lastLogin saja
       await docRef.update({
         'lastLogin': FieldValue.serverTimestamp(),
       });
     } else {
-      // User baru → buat profil lengkap
+      // user baru, buat profil lengkap
       await docRef.set({
         'uid': user.uid,
         'email': user.email ?? '',
@@ -32,24 +32,24 @@ class FirestoreService {
     }
   }
 
-  /// Mengambil data profil pengguna berdasarkan UID.
+  // ambil data profil pengguna berdasarkan uid
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {
     final doc = await _db.collection('users').doc(uid).get();
     return doc.exists ? doc.data() : null;
   }
 
-  // ─── Chat Session Persistence ──────────────────────────────────────
+  // penyimpanan sesi obrolan ke firestore
 
-  /// Referensi sub-koleksi chat_sessions milik user tertentu.
+  // referensi sub-koleksi chat_sessions milik user tertentu
   CollectionReference<Map<String, dynamic>> _sessionsRef(String uid) =>
       _db.collection('users').doc(uid).collection('chat_sessions');
 
-  /// Menyimpan atau memperbarui satu sesi obrolan ke Firestore.
+  // simpan atau update satu sesi obrolan ke firestore
   Future<void> saveChatSession(String uid, ChatSession session) async {
     await _sessionsRef(uid).doc(session.id).set(session.toJson());
   }
 
-  /// Memuat semua sesi obrolan milik user, diurutkan berdasarkan createdAt (terbaru dulu).
+  // muat semua sesi obrolan milik user, urut dari terbaru
   Future<List<ChatSession>> loadChatSessions(String uid) async {
     final snapshot = await _sessionsRef(uid)
         .orderBy('createdAt', descending: true)
@@ -59,7 +59,7 @@ class FirestoreService {
         .toList();
   }
 
-  /// Menghapus satu sesi obrolan dari Firestore.
+  // hapus satu sesi obrolan dari firestore
   Future<void> deleteChatSession(String uid, String sessionId) async {
     await _sessionsRef(uid).doc(sessionId).delete();
   }

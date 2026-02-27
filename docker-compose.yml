@@ -1,18 +1,14 @@
-# ============================================================
-# Docker Compose — Orkestrasi Qdrant + Backend RAG
-# ============================================================
-# Menjalankan seluruh stack dengan satu perintah:
-#   docker compose up --build
-# ============================================================
+# docker compose untuk menjalankan qdrant dan backend rag
+# cara pakai: docker compose up --build
 
 services:
-  # ── Qdrant Vector Database ────────────────────────────────
+  # database vektor qdrant
   qdrant:
     image: qdrant/qdrant:v1.13.2
     container_name: quran-qdrant
     ports:
-      - "6333:6333"   # REST API
-      - "6334:6334"   # gRPC
+      - "6333:6333"   # rest api
+      - "6334:6334"   # grpc
     volumes:
       - qdrant_data:/qdrant/storage
     environment:
@@ -24,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Backend API (FastAPI + RAG) ───────────────────────────
+  # backend api (FastAPI + rag pipeline)
   backend:
     build:
       context: ./backend
@@ -42,7 +38,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     volumes:
-      # Mount Firebase credentials (opsional, jika ada)
+      # mount firebase credentials (opsional, kalau ada)
       - ./backend/firebase-credentials.json:/app/firebase-credentials.json:ro
 
 volumes:

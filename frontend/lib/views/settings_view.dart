@@ -6,13 +6,7 @@ import '../config/app_theme.dart';
 import '../services/auth_service.dart';
 import '../viewmodels/chat_viewmodel.dart';
 
-/// Halaman pengaturan untuk prototipe penelitian akademik.
-///
-/// Menampilkan:
-///   - Profil pengguna (avatar, nama, email)
-///   - Pengaturan tema (Gelap / Terang)
-///   - Tombol keluar
-///   - Label versi aplikasi
+// halaman pengaturan aplikasi
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
@@ -26,10 +20,10 @@ class SettingsView extends StatelessWidget {
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Column(
         children: [
-          // ── Header ──
+          // header
           _SettingsHeader(isDark: isDark),
 
-          // ── Body ──
+          // konten utama
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(
@@ -37,10 +31,10 @@ class SettingsView extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // ── Profil ──
+                  // profil
                   _ProfileSection(user: user, isDark: isDark),
 
-                  // ── Daftar pengaturan ──
+                  // daftar pengaturan
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -64,7 +58,7 @@ class SettingsView extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Keluar ──
+                  // tombol keluar
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                     child: _LogoutButton(
@@ -73,7 +67,7 @@ class SettingsView extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Label versi ──
+                  // label versi
                   Padding(
                     padding: const EdgeInsets.only(top: 16, bottom: 32),
                     child: Text(
@@ -93,9 +87,7 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Aksi
-  // ────────────────────────────────────────────────────────────────────────
+  // aksi
 
   void _showThemeSheet(BuildContext context, bool isDark) {
     showModalBottomSheet(
@@ -113,7 +105,7 @@ class SettingsView extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle bar
+                // garis handle
                 Center(
                   child: Container(
                     width: 40,
@@ -170,11 +162,7 @@ class SettingsView extends StatelessWidget {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// Sub-widget
-// ══════════════════════════════════════════════════════════════════════════
-
-/// Header lengket dengan tombol tutup dan judul "Pengaturan" di tengah.
+// widget header pengaturan
 class _SettingsHeader extends StatelessWidget {
   const _SettingsHeader({required this.isDark});
 
@@ -201,7 +189,7 @@ class _SettingsHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Row(
             children: [
-              // Tombol tutup / kembali
+              // tombol tutup
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(
@@ -214,7 +202,7 @@ class _SettingsHeader extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                 ),
               ),
-              // Judul di tengah
+              // judul tengah
               Expanded(
                 child: Text(
                   'Pengaturan',
@@ -226,7 +214,7 @@ class _SettingsHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              // Penyeimbang tombol tutup
+              // penyeimbang biar judul tetap di tengah
               const SizedBox(width: 48),
             ],
           ),
@@ -236,7 +224,7 @@ class _SettingsHeader extends StatelessWidget {
   }
 }
 
-/// Avatar profil, nama, dan email.
+// bagian profil pengguna
 class _ProfileSection extends StatelessWidget {
   const _ProfileSection({required this.user, required this.isDark});
 
@@ -253,7 +241,7 @@ class _ProfileSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
-          // Avatar
+          // avatar
           Container(
             width: 96,
             height: 96,
@@ -283,7 +271,7 @@ class _ProfileSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Nama
+          // nama
           Text(
             displayName,
             style: GoogleFonts.inter(
@@ -293,7 +281,7 @@ class _ProfileSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          // Email
+          // email
           Text(
             email,
             style: GoogleFonts.inter(
@@ -330,7 +318,7 @@ class _ProfileSection extends StatelessWidget {
   }
 }
 
-/// Kartu membulat yang mengelompokkan baris pengaturan.
+// grup pengaturan dalam kartu
 class _SettingsGroup extends StatelessWidget {
   const _SettingsGroup({
     required this.isDark,
@@ -393,7 +381,7 @@ class _SettingsGroup extends StatelessWidget {
   }
 }
 
-/// Baris pengaturan tunggal dengan ikon, judul, subjudul opsional, dan chevron.
+// satu baris item pengaturan
 class _SettingsTile extends StatelessWidget {
   const _SettingsTile({
     required this.icon,
@@ -469,7 +457,7 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// Tombol keluar lebar penuh berwarna merah.
+// tombol logout
 class _LogoutButton extends StatelessWidget {
   const _LogoutButton({required this.isDark, required this.onTap});
 
@@ -505,7 +493,7 @@ class _LogoutButton extends StatelessWidget {
   }
 }
 
-/// Baris opsi tema di bottom sheet.
+// opsi tema di bottom sheet
 class _ThemeOption extends StatelessWidget {
   const _ThemeOption({
     required this.icon,

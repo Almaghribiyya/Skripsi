@@ -1,21 +1,7 @@
-"""
-RAGService — Orkestrator utama pipeline Retrieval-Augmented Generation.
-
-Tanggung jawab:
-  1. Menerima pertanyaan pengguna.
-  2. Memanggil EmbeddingService untuk retrieval (similarity search).
-  3. Menerapkan SCORE THRESHOLD (grounded generation gate).
-  4. Merakit konteks dari chunk yang relevan.
-  5. Memanggil LLMService untuk generation.
-  6. Mengembalikan hasil terstruktur (jawaban + referensi).
-
-Keputusan arsitektural:
-- Score threshold mencegah LLM mendapat konteks yang tidak relevan.
-  Jika skor tertinggi di bawah ambang, sistem langsung menolak secara
-  halus (negative rejection) TANPA memanggil LLM — menghemat biaya API.
-- Service ini tidak bergantung pada framework HTTP (FastAPI), sehingga
-  bisa di-test secara independen (unit test).
-"""
+# orkestrator utama pipeline rag (retrieval-augmented generation).
+# alur kerjanya: terima pertanyaan, cari ayat yang relevan di qdrant,
+# cek apakah skor cukup tinggi, kalau iya rakit konteks dan panggil llm.
+# kalau skor rendah, langsung tolak halus tanpa panggil llm.
 
 import logging
 from dataclasses import dataclass
@@ -27,8 +13,10 @@ from app.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
 
+# pesan kalau tidak ada data ayat sama sekali
 NO_DATA_MESSAGE = "Sistem belum memiliki data ayat yang cukup untuk menjawab pertanyaan ini."
 
+# pesan kalau skor similarity di bawah threshold
 LOW_RELEVANCE_MESSAGE = (
     "Mohon maaf, saya tidak menemukan ayat Al-Qur'an yang cukup relevan "
     "dengan pertanyaan Anda. Silakan coba ajukan pertanyaan dengan kata kunci "
@@ -37,7 +25,7 @@ LOW_RELEVANCE_MESSAGE = (
 
 
 class RAGService:
-    """Orkestrator pipeline RAG: Retrieve → Gate → Generate."""
+    """Orkestrator pipeline rag: retrieve, gate, generate."""
 
     def __init__(
         self,
@@ -50,18 +38,9 @@ class RAGService:
         self._threshold = settings.similarity_threshold
 
     def answer(self, pertanyaan: str, top_k: int = 3) -> QueryResponse:
-        """
-        Pipeline utama RAG.
+        """Jalankan seluruh pipeline rag untuk satu pertanyaan."""
 
-        Args:
-            pertanyaan: Pertanyaan pengguna dalam bahasa Indonesia.
-            top_k: Jumlah dokumen referensi yang diambil (1-5).
-
-        Returns:
-            QueryResponse berisi jawaban LLM dan referensi ayat.
-        """
-
-        # ── Tahap A: Retrieval ────────────────────────────────────────
+        # cari ayat yang relevan lewat similarity search
         chunks = self._embedding.retrieve(query=pertanyaan, top_k=top_k)
 
         if not chunks:
@@ -74,16 +53,17 @@ class RAGService:
                 skor_tertinggi=0.0,
             )
 
-        skor_tertinggi = chunks[0].score  # chunks sudah diurutkan descending
+        # chunks sudah diurutkan descending, ambil skor tertinggi
+        skor_tertinggi = chunks[0].score
 
-        # ── Tahap B: Score Threshold Gate (Grounded Generation) ───────
+        # cek apakah skor cukup tinggi, kalau tidak tolak halus
         if skor_tertinggi < self._threshold:
             logger.info(
                 "Skor tertinggi (%.4f) < threshold (%.4f). Negative rejection.",
                 skor_tertinggi,
                 self._threshold,
             )
-            # Tetap kembalikan referensi agar user bisa nilai sendiri
+            # tetap kembalikan referensi supaya user bisa lihat sendiri
             referensi = [
                 ReferensiItem(
                     skor_kemiripan=round(c.score, 4),
@@ -102,7 +82,7 @@ class RAGService:
                 skor_tertinggi=round(skor_tertinggi, 4),
             )
 
-        # ── Tahap C: Rakit Konteks ────────────────────────────────────
+        # rakit konteks dari chunk-chunk yang relevan untuk dikirim ke llm
         konteks_parts: list[str] = []
         referensi: list[ReferensiItem] = []
 
@@ -124,7 +104,7 @@ class RAGService:
 
         konteks_teks = "\n\n".join(konteks_parts)
 
-        # ── Tahap D: Generation ───────────────────────────────────────
+        # panggil llm untuk generate jawaban berdasarkan konteks ayat
         jawaban = self._llm.generate(konteks=konteks_teks, pertanyaan=pertanyaan)
 
         logger.info(

@@ -1,9 +1,6 @@
-"""
-Unit Tests: RAGService (logika inti pipeline RAG).
-
-Menguji business logic pipeline tanpa memerlukan
-Qdrant, LLM, atau koneksi jaringan apapun.
-"""
+# test untuk RAGService, logika inti pipeline rag.
+# semua test ini murni unit test, tidak butuh Qdrant, LLM,
+# atau koneksi jaringan apapun.
 
 from unittest.mock import MagicMock
 
@@ -15,7 +12,7 @@ from app.services.rag_service import RAGService, NO_DATA_MESSAGE, LOW_RELEVANCE_
 
 
 def _make_chunk(score: float, surah: str = "Al-Fatihah", ayat: int = 1) -> RetrievedChunk:
-    """Helper: buat RetrievedChunk dummy."""
+    """Bikin RetrievedChunk dummy untuk testing."""
     return RetrievedChunk(
         score=score,
         nama_surah=surah,
@@ -32,7 +29,7 @@ def _make_rag_service(
     llm_answer: str = "Jawaban dari LLM.",
     threshold: float = 0.45,
 ) -> RAGService:
-    """Helper: buat RAGService dengan mock dependencies."""
+    """Bikin RAGService dengan mock dependencies."""
     mock_embedding = MagicMock(spec=EmbeddingService)
     mock_embedding.retrieve.return_value = chunks
 
@@ -50,7 +47,7 @@ def _make_rag_service(
 
 
 def test_no_chunks_returns_no_data_message():
-    """Jika retrieval mengembalikan 0 chunk, response harus berisi pesan no-data."""
+    """Retrieval 0 chunk harus kembalikan pesan no-data."""
     rag = _make_rag_service(chunks=[])
     result = rag.answer("Apa itu iman?")
 
@@ -61,18 +58,18 @@ def test_no_chunks_returns_no_data_message():
 
 
 def test_low_score_triggers_negative_rejection():
-    """Jika skor tertinggi < threshold, harus mengembalikan LOW_RELEVANCE_MESSAGE."""
+    """Skor tertinggi di bawah threshold harus trigger negative rejection."""
     low_score_chunks = [_make_chunk(score=0.30)]
     rag = _make_rag_service(chunks=low_score_chunks, threshold=0.45)
     result = rag.answer("Pertanyaan tidak relevan?")
 
     assert result.jawaban_llm == LOW_RELEVANCE_MESSAGE
     assert result.skor_tertinggi == 0.30
-    assert len(result.referensi) == 1  # Referensi tetap dikembalikan
+    assert len(result.referensi) == 1  # referensi tetap dikembalikan
 
 
 def test_high_score_calls_llm():
-    """Jika skor tertinggi >= threshold, LLM harus dipanggil."""
+    """Skor di atas threshold harus panggil LLM."""
     chunks = [_make_chunk(score=0.85, surah="Al-Baqarah", ayat=255)]
     rag = _make_rag_service(chunks=chunks, llm_answer="Ayat Kursi menjelaskan...")
     result = rag.answer("Apa itu Ayat Kursi?")
@@ -85,7 +82,7 @@ def test_high_score_calls_llm():
 
 
 def test_multiple_chunks_sorted_by_score():
-    """Referensi harus diurutkan berdasarkan skor tertinggi."""
+    """Referensi harus urut dari skor tertinggi."""
     chunks = [
         _make_chunk(score=0.90, surah="Al-Ikhlas", ayat=1),
         _make_chunk(score=0.75, surah="Al-Falaq", ayat=1),
@@ -109,7 +106,7 @@ def test_exact_threshold_passes():
 
 
 def test_response_schema_completeness():
-    """Response harus memiliki semua field yang diperlukan."""
+    """Response harus punya semua field yang diperlukan."""
     chunks = [_make_chunk(score=0.80)]
     rag = _make_rag_service(chunks=chunks)
     result = rag.answer("Test schema?")

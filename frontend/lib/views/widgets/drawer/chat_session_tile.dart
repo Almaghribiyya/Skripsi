@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// A single chat session tile inside the grouped list.
-///
-/// Matches HTML: rounded-xl with leading icon container, truncated title, and
-/// trailing contextual `more_vert` icon that appears on hover/press.
-///
-/// Active state: bg-surface-dark/50 with border, filled chat_bubble icon,
-/// primary tint on icon container.
-/// Inactive state: transparent bg, outlined icon, muted colors.
+// tile sesi chat di dalam grouped list,
+// punya ikon di kiri, judul yang di-truncate, dan menu konteks di kanan
+// state aktif pakai background dan border, state tidak aktif transparan
 class ChatSessionTile extends StatelessWidget {
   const ChatSessionTile({
     super.key,
@@ -63,10 +58,10 @@ class ChatSessionTile extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Leading icon container
+                // ikon di sebelah kiri
                 _buildIcon(isDark),
                 const SizedBox(width: 12),
-                // Title
+                // judul sesi chat
                 Expanded(
                   child: Text(
                     title,
@@ -82,7 +77,7 @@ class ChatSessionTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Context menu
+                // menu konteks (rename/hapus)
                 _ChatSessionContextMenu(
                   isDark: isDark,
                   onRename: onRename,
@@ -121,7 +116,7 @@ class ChatSessionTile extends StatelessWidget {
   }
 }
 
-/// Trailing contextual menu with Rename / Delete actions.
+// menu konteks trailing dengan aksi Ganti Nama dan Hapus
 class _ChatSessionContextMenu extends StatelessWidget {
   const _ChatSessionContextMenu({
     required this.isDark,

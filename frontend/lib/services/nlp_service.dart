@@ -7,8 +7,8 @@ import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
 
-/// Exception khusus untuk error yang berasal dari NlpService
-/// agar ViewModel bisa memberikan pesan error yang spesifik ke UI.
+// exception khusus untuk error dari NlpService supaya
+// viewmodel bisa kasih pesan error yang spesifik ke ui
 class NlpException implements Exception {
   final String message;
   final int? statusCode;
@@ -18,34 +18,28 @@ class NlpException implements Exception {
   String toString() => message;
 }
 
-/// Exception khusus saat request dibatalkan oleh pengguna.
+// exception saat request dibatalkan oleh pengguna
 class NlpCancelledException implements Exception {
   const NlpCancelledException();
 }
 
-/// Service untuk berkomunikasi dengan Backend RAG API.
-///
-/// Fitur:
-/// - Otomatis mengirim Firebase Auth token (Authorization header).
-/// - Retry mechanism untuk network error (configurable).
-/// - Timeout protection agar UI tidak freeze.
-/// - Error differentiation (401, 429, 5xx, network).
+// service untuk komunikasi dengan backend rag api.
+// otomatis kirim firebase auth token, ada retry untuk masalah jaringan,
+// timeout supaya ui tidak freeze, dan error handling per status code.
 class NlpService {
   final String baseUrl;
 
   NlpService({String? baseUrl}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
-  /// Mengambil Firebase ID Token dari user yang sedang login.
+  // ambil firebase id token dari user yang sedang login
   Future<String?> _getAuthToken() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
     return await user.getIdToken();
   }
 
-  /// Mengirim pertanyaan ke backend dan menerima jawaban RAG.
-  ///
-  /// Accepts an optional [client] for cancellation support.
-  /// Throws [NlpException] dengan pesan error yang user-friendly.
+  // kirim pertanyaan ke backend dan terima jawaban rag.
+  // bisa terima client opsional untuk mendukung pembatalan request.
   Future<Map<String, dynamic>> getAnswerFromVectorDB(
     String query, {
     int topK = 3,
@@ -55,7 +49,7 @@ class NlpService {
     final effectiveClient = client ?? http.Client();
     final shouldCloseClient = client == null;
 
-    // Bangun headers dengan auth token
+    // bangun headers dengan auth token
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };
@@ -69,7 +63,7 @@ class NlpService {
       'top_k': topK,
     });
 
-    // Retry loop untuk network resilience
+    // ulangi request kalau gagal karena jaringan
     http.Response? response;
     Exception? lastError;
 
@@ -78,9 +72,9 @@ class NlpService {
         response = await effectiveClient
             .post(url, headers: headers, body: body)
             .timeout(Duration(seconds: ApiConfig.timeoutSeconds));
-        break; // Berhasil, keluar dari loop
+        break; // berhasil, keluar dari loop
       } on http.ClientException {
-        // Client ditutup (cancelled oleh user)
+        // client ditutup (dibatalkan oleh user)
         throw const NlpCancelledException();
       } on TimeoutException {
         lastError = const NlpException(
@@ -97,7 +91,7 @@ class NlpService {
         lastError = NlpException('Terjadi kesalahan jaringan: $e');
       }
 
-      // Tunggu sebelum retry (kecuali attempt terakhir)
+      // tunggu sebelum retry (kecuali percobaan terakhir)
       if (attempt < ApiConfig.maxRetries) {
         await Future.delayed(
           Duration(milliseconds: ApiConfig.retryDelayMs),
@@ -105,15 +99,15 @@ class NlpService {
       }
     }
 
-    // Tutup client jika kita yang buat
+    // tutup client kalau kita yang buat
     if (shouldCloseClient) effectiveClient.close();
 
-    // Jika semua retry gagal
+    // kalau semua retry gagal
     if (response == null) {
       throw lastError ?? const NlpException('Gagal menghubungi server.');
     }
 
-    // Parse response berdasarkan status code
+    // parse response berdasarkan status code
     switch (response.statusCode) {
       case 200:
         final data = json.decode(response.body);

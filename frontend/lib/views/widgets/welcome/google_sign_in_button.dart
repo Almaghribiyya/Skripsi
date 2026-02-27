@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// Primary CTA — "Continue with Google" green button with Google logo SVG
-/// equivalent (painted via CustomPaint) and press-scale animation.
+// Tombol utama "Masuk dengan Google" dengan logo dan animasi tekan
 class GoogleSignInButton extends StatefulWidget {
   const GoogleSignInButton({super.key, required this.onPressed});
 
@@ -70,7 +69,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Google "G" icon painted inline
+              // ikon Google "G" digambar langsung
               const _GoogleIcon(size: 20),
               const SizedBox(width: 12),
               Text(
@@ -89,8 +88,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton>
   }
 }
 
-/// Simplified Google "G" icon using built-in Material icon to avoid
-/// external SVG dependency. Styled to match the white-on-primary design.
+// Ikon Google "G" sederhana menggunakan CustomPaint
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon({required this.size});
   final double size;
@@ -113,10 +111,10 @@ class _GoogleLogoPainter extends CustomPainter {
     final double s = size.width;
     final Paint paint = Paint()..style = PaintingStyle.fill;
 
-    // Scaled coordinates based on 24x24 viewbox → current size
+    // koordinat diskalakan dari viewbox 24x24 ke ukuran saat ini
     final double scale = s / 24.0;
 
-    // Blue (top-right arc) — rendered as white with slight transparency
+    // biru (lengkung kanan atas) ditampilkan putih semi transparan
     paint.color = Colors.white.withValues(alpha: 0.9);
     final Path bluePath = Path()
       ..moveTo(23.766 * scale, 12.276 * scale)
@@ -134,7 +132,7 @@ class _GoogleLogoPainter extends CustomPainter {
       ..close();
     canvas.drawPath(bluePath, paint);
 
-    // Green (bottom-right)
+    // hijau (kanan bawah)
     paint.color = Colors.white.withValues(alpha: 0.7);
     final Path greenPath = Path()
       ..moveTo(12.24 * scale, 24.001 * scale)
@@ -152,7 +150,7 @@ class _GoogleLogoPainter extends CustomPainter {
       ..close();
     canvas.drawPath(greenPath, paint);
 
-    // Yellow (bottom-left)
+    // kuning (kiri bawah)
     paint.color = Colors.white.withValues(alpha: 0.6);
     final Path yellowPath = Path()
       ..moveTo(5.503 * scale, 14.300 * scale)
@@ -166,7 +164,7 @@ class _GoogleLogoPainter extends CustomPainter {
       ..close();
     canvas.drawPath(yellowPath, paint);
 
-    // Red (top-left)
+    // merah (kiri atas)
     paint.color = Colors.white.withValues(alpha: 0.8);
     final Path redPath = Path()
       ..moveTo(12.24 * scale, 4.750 * scale)

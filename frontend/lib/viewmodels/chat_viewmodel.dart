@@ -4,10 +4,9 @@ import '../models/message_model.dart';
 import '../services/nlp_service.dart';
 import '../services/firestore_service.dart';
 
-/// ViewModel utama untuk fitur chat.
-///
-/// Mengelola: multi-sesi, pengiriman pesan, loading state,
-/// error handling yang terdiferensiasi, dan persistensi Firestore.
+// viewmodel utama untuk fitur chat.
+// mengelola multi-sesi, pengiriman pesan, loading state,
+// error handling, dan penyimpanan ke firestore.
 class ChatViewModel extends ChangeNotifier {
   final TextEditingController textController = TextEditingController();
   final ScrollController scrollController = ScrollController();
@@ -18,17 +17,16 @@ class ChatViewModel extends ChangeNotifier {
   String? activeSessionId;
   bool isLoading = false;
 
-  /// Pesan error terakhir — di-consume oleh UI untuk menampilkan SnackBar.
-  /// Setelah ditampilkan, UI harus memanggil [clearError].
+  // pesan error terakhir, ditampilkan sebagai snackbar oleh ui lalu di-clear
   String? lastError;
 
-  /// Flag apakah error terakhir memerlukan re-login.
+  // flag kalau error terakhir butuh login ulang
   bool requiresReLogin = false;
 
-  /// Flag edit mode — true saat pengguna mengedit prompt lama.
+  // flag mode edit, true saat pengguna mengedit prompt lama
   bool isEditingMessage = false;
 
-  /// HTTP client aktif — untuk membatalkan request yang sedang berjalan.
+  // http client aktif untuk membatalkan request yang sedang berjalan
   http.Client? _activeClient;
 
   String? _currentUid;
@@ -44,13 +42,13 @@ class ChatViewModel extends ChangeNotifier {
     createNewSession();
   }
 
-  /// Reset error state setelah ditampilkan oleh UI.
+  // reset error state setelah ditampilkan oleh ui
   void clearError() {
     lastError = null;
     requiresReLogin = false;
   }
 
-  /// Dipanggil setelah login berhasil. Memuat sesi obrolan dari Firestore.
+  // dipanggil setelah login berhasil, muat sesi obrolan dari firestore
   Future<void> loadUserSessions(String uid) async {
     _currentUid = uid;
     try {
@@ -117,10 +115,8 @@ class ChatViewModel extends ChangeNotifier {
     createNewSession();
   }
 
-  /// Edit prompt pengguna terakhir — mirip Gemini/ChatGPT mobile.
-  ///
-  /// Menghapus pesan user terakhir beserta respons AI-nya (jika ada),
-  /// lalu memasukkan teks prompt ke input field agar bisa diedit.
+  // edit prompt pengguna terakhir, hapus pesan user terakhir beserta
+  // respons ai-nya, lalu masukkan teks ke input field untuk diedit
   void editLastUserMessage() {
     if (activeSessionId == null) return;
     final sessionIndex = sessions.indexWhere((s) => s.id == activeSessionId);
@@ -129,7 +125,7 @@ class ChatViewModel extends ChangeNotifier {
     final messages = sessions[sessionIndex].messages;
     if (messages.isEmpty) return;
 
-    // Cari user message paling akhir
+    // cari user message paling akhir
     int lastUserIdx = -1;
     for (int i = messages.length - 1; i >= 0; i--) {
       if (messages[i].sender == MessageSender.user) {
@@ -141,10 +137,10 @@ class ChatViewModel extends ChangeNotifier {
 
     final editText = messages[lastUserIdx].text;
 
-    // Hapus pesan dari lastUserIdx sampai akhir (user msg + AI response)
+    // hapus pesan dari lastUserIdx sampai akhir (user msg + respons ai)
     messages.removeRange(lastUserIdx, messages.length);
 
-    // Masukkan teks ke input field
+    // masukkan teks ke input field
     textController.text = editText;
     textController.selection = TextSelection.fromPosition(
       TextPosition(offset: editText.length),
@@ -157,22 +153,20 @@ class ChatViewModel extends ChangeNotifier {
     _saveSessionToFirestore(sessions[sessionIndex]);
   }
 
-  /// Batalkan mode edit.
+  // batalkan mode edit
   void cancelEditMode() {
     isEditingMessage = false;
     textController.clear();
     notifyListeners();
   }
 
-  /// Menghentikan response yang sedang di-generate — mirip Gemini/ChatGPT.
-  ///
-  /// Menutup HTTP client aktif sehingga request dibatalkan,
-  /// lalu menambahkan pesan AI partial "Response dihentikan".
+  // hentikan response yang sedang di-generate.
+  // tutup http client aktif sehingga request dibatalkan.
   void stopResponse() {
     if (!isLoading || _activeClient == null) return;
     _activeClient!.close();
     _activeClient = null;
-    // State akan di-update oleh catch block di sendMessage
+    // state akan di-update oleh catch block di sendMessage
   }
 
   void sendMessage() async {
@@ -183,7 +177,7 @@ class ChatViewModel extends ChangeNotifier {
     int sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
     if (sessionIndex == -1) return;
 
-    // Auto-title dari pesan pertama
+    // auto-title dari pesan pertama
     if (sessions[sessionIndex].messages.isEmpty) {
       sessions[sessionIndex].title =
           text.length > 25 ? "${text.substring(0, 25)}..." : text;
@@ -204,7 +198,7 @@ class ChatViewModel extends ChangeNotifier {
     notifyListeners();
     _scrollToBottom();
 
-    // Buat client baru untuk request ini (agar bisa di-cancel)
+    // buat client baru untuk request ini supaya bisa di-cancel
     _activeClient = http.Client();
 
     try {
@@ -232,7 +226,7 @@ class ChatViewModel extends ChangeNotifier {
       ));
 
     } on NlpCancelledException {
-      // User menekan tombol stop — tidak perlu menambah pesan error
+      // user menekan tombol stop, tidak perlu tampilkan error
       sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
       if (sessionIndex == -1) return;
 
@@ -244,11 +238,11 @@ class ChatViewModel extends ChangeNotifier {
       ));
 
     } on NlpException catch (e) {
-      // Error terdiferensiasi dari NlpService
+      // error dari nlp service dengan status code spesifik
       sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
       if (sessionIndex == -1) return;
 
-      // Jika 401, flag untuk re-login
+      // kalau 401, tandai untuk login ulang
       if (e.statusCode == 401) {
         requiresReLogin = true;
         lastError = e.message;
@@ -264,7 +258,7 @@ class ChatViewModel extends ChangeNotifier {
       ));
 
     } catch (e) {
-      // Fallback untuk error tak terduga
+      // fallback untuk error tak terduga
       sessionIndex = sessions.indexWhere((s) => s.id == targetSessionId);
       if (sessionIndex == -1) return;
 
@@ -292,9 +286,9 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
-  // ─── Firestore Helpers ──────────────────────────────────────────────
+  // penyimpanan firestore
 
-  /// Simpan satu sesi ke Firestore (non-blocking)
+  // simpan satu sesi ke firestore (non-blocking)
   void _saveSessionToFirestore(ChatSession session) {
     if (_currentUid == null) return;
     _firestoreService.saveChatSession(_currentUid!, session).catchError((e) {
@@ -302,7 +296,7 @@ class ChatViewModel extends ChangeNotifier {
     });
   }
 
-  /// Hapus satu sesi dari Firestore (non-blocking)
+  // hapus satu sesi dari firestore (non-blocking)
   void _deleteSessionFromFirestore(String sessionId) {
     if (_currentUid == null) return;
     _firestoreService.deleteChatSession(_currentUid!, sessionId).catchError((e) {

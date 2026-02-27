@@ -10,13 +10,9 @@ import 'widgets/chat/ai_message_bubble.dart';
 import 'widgets/chat/chat_input_composer.dart';
 import 'widgets/sidebar_menu.dart';
 
-/// Main chat screen with modern AI-style conversation interface.
-///
-/// Structure:
-///   ChatAppBar (sticky) → ChatMessageList (scrollable) → ChatInputComposer (floating bottom)
-///
-/// Uses [StatefulWidget] to properly manage the [ScaffoldState] key
-/// across rebuilds (required for drawer integration).
+// layar chat utama dengan tampilan percakapan ai.
+// struktur: app bar (sticky) di atas, daftar pesan (scrollable) di tengah,
+// input composer (mengambang) di bawah.
 class ChatView extends StatefulWidget {
   const ChatView({super.key});
 
@@ -36,7 +32,7 @@ class _ChatViewState extends State<ChatView> {
       drawer: const SidebarMenu(),
       body: Column(
         children: [
-          // ── Sticky App Bar ──
+          // app bar sticky di atas
           ChatAppBar(
             onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
             onProfilePressed: () {
@@ -44,14 +40,14 @@ class _ChatViewState extends State<ChatView> {
             },
             profileImageUrl: user?.photoURL,
           ),
-          // ── Message list + input ──
+          // daftar pesan dan input
           Expanded(
             child: Stack(
               children: [
-                // Scrollable chat area
+                // area chat yang bisa di-scroll
                 Consumer<ChatViewModel>(
                   builder: (context, vm, _) {
-                    // Error SnackBar — ditampilkan sekali lalu di-clear
+                    // tampilkan error snackbar sekali lalu clear
                     if (vm.lastError != null) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (!context.mounted) return;
@@ -99,7 +95,7 @@ class _ChatViewState extends State<ChatView> {
                         }
                         final msg = messages[index];
                         if (msg.sender == MessageSender.user) {
-                          // Cari apakah ini user message terakhir
+                          // Cari apakah ini pesan user terakhir
                           final isLast = _isLastUserMessage(messages, index);
                           return UserMessageBubble(
                             text: msg.text,
@@ -116,7 +112,7 @@ class _ChatViewState extends State<ChatView> {
                     );
                   },
                 ),
-                // Floating input at bottom
+                // input mengambang di bawah
                 const Positioned(
                   left: 0,
                   right: 0,
@@ -131,7 +127,7 @@ class _ChatViewState extends State<ChatView> {
     );
   }
 
-  /// Apakah pesan pada index ini adalah user message terakhir di list.
+  // cek apakah pesan pada index ini adalah user message terakhir di list
   bool _isLastUserMessage(List<MessageModel> messages, int index) {
     for (int i = messages.length - 1; i >= 0; i--) {
       if (messages[i].sender == MessageSender.user) {
@@ -141,7 +137,7 @@ class _ChatViewState extends State<ChatView> {
     return false;
   }
 
-  /// AI typing indicator (three animated dots).
+  // indikator ketik ai (tiga titik animasi)
   static Widget _buildTypingIndicator(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
@@ -149,7 +145,7 @@ class _ChatViewState extends State<ChatView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AI avatar
+          // avatar ai
           Container(
             width: 32,
             height: 32,
@@ -185,7 +181,7 @@ class _ChatViewState extends State<ChatView> {
   }
 }
 
-/// Animated three-dot typing indicator.
+// animasi tiga titik indikator sedang mengetik
 class _TypingDots extends StatefulWidget {
   const _TypingDots();
 

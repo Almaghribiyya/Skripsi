@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../config/app_theme.dart';
 
-/// Baris aksi di bawah pesan AI: Salin · Bagikan.
+// baris aksi di bawah pesan AI: salin dan bagikan
 class MessageActionChips extends StatefulWidget {
   const MessageActionChips({
     super.key,

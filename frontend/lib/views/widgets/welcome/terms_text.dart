@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// Terms of Service & Privacy Policy footer text.
+// Teks footer ketentuan layanan dan kebijakan privasi
 class TermsText extends StatelessWidget {
   const TermsText({super.key});
 

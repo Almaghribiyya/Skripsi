@@ -1,14 +1,7 @@
-"""
-Pustaka Digital Al-Qur'an — REST API (RAG Architecture)
-
-Main application module: App Factory Pattern.
-Semua business logic dipindahkan ke layer service & router.
-File ini hanya bertanggung jawab atas:
-  1. Membuat instance FastAPI.
-  2. Mengonfigurasi middleware (CORS, Rate Limiter).
-  3. Mendaftarkan router.
-  4. Menginisialisasi service saat startup (lifespan).
-"""
+# file utama aplikasi backend. tanggung jawabnya cuma:
+# membuat instance fastapi, pasang middleware, daftarkan router,
+# dan inisialisasi service saat startup lewat lifespan.
+# semua business logic ada di layer service dan router.
 
 import logging
 from contextlib import asynccontextmanager
@@ -24,7 +17,7 @@ from app.config import get_settings
 from app.dependencies import init_services
 from app.routers import health, ask
 
-# ── Logger ────────────────────────────────────────────────────────────
+# setup logging supaya output di terminal rapi dan mudah dibaca
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s │ %(levelname)-8s │ %(name)s │ %(message)s",
@@ -33,14 +26,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ── Lifespan (Startup / Shutdown) ────────────────────────────────────
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    """
-    Inisialisasi heavy resources (embedding model, LLM, Qdrant)
-    saat startup. Lebih efisien daripada inisialisasi di modul level
-    karena terkontrol dan bisa di-log.
-    """
+    """Muat semua resource berat saat startup seperti model embedding,
+    koneksi llm, dan qdrant. Pakai lifespan supaya terkontrol dan
+    bisa di-log dengan jelas kapan selesainya."""
     settings = get_settings()
     logger.info("=" * 60)
     logger.info("STARTING %s v%s", settings.app_title, settings.app_version)
@@ -54,14 +44,15 @@ async def lifespan(application: FastAPI):
     logger.info("Application ready to serve requests.")
     logger.info("=" * 60)
 
-    yield  # Aplikasi berjalan
+    yield  # aplikasi berjalan di sini
 
     logger.info("Shutting down application.")
 
 
-# ── App Factory ──────────────────────────────────────────────────────
+# baca settings dan buat instance aplikasi
 settings = get_settings()
 
+# rate limiter untuk mencegah spam request dari satu ip
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
@@ -73,11 +64,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Rate Limiter
+# pasang rate limiter ke state aplikasi
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS Middleware
+# pasang cors supaya frontend bisa akses api dari domain berbeda
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -87,9 +78,10 @@ app.add_middleware(
 )
 
 
-# ── Global Exception Handler ────────────────────────────────────────
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    """Tangkap semua error yang tidak tertangani supaya user tetap
+    dapat response json yang rapi, bukan html error bawaan."""
     logger.error("Unhandled Exception on %s %s: %s", request.method, request.url.path, str(exc))
     return JSONResponse(
         status_code=500,
@@ -97,6 +89,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# ── Register Routers ────────────────────────────────────────────────
+# daftarkan semua router ke aplikasi
 app.include_router(health.router)
 app.include_router(ask.router)

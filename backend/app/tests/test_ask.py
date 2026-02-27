@@ -1,15 +1,12 @@
-"""
-Unit Tests: Endpoint POST /api/ask.
-
-Semua test menggunakan mock RAGService — tidak perlu Qdrant/LLM aktif.
-Fokus: validasi request/response schema, error handling, rate limiting.
-"""
+# test untuk endpoint POST /api/ask.
+# semua test pakai mock RAGService, tidak perlu Qdrant atau LLM aktif.
+# fokusnya: validasi schema request/response, error handling, rate limiting.
 
 from app.models.schemas import QueryResponse, ReferensiItem
 
 
 def test_ask_returns_200_with_valid_payload(test_client):
-    """POST /api/ask dengan payload valid harus mengembalikan 200."""
+    """Payload valid harus dapat response 200."""
     payload = {"pertanyaan": "Apa itu hari pembalasan?", "top_k": 2}
     response = test_client.post("/api/ask", json=payload)
     assert response.status_code == 200
@@ -21,14 +18,14 @@ def test_ask_returns_200_with_valid_payload(test_client):
 
 
 def test_ask_returns_422_without_pertanyaan(test_client):
-    """POST /api/ask tanpa field 'pertanyaan' harus mengembalikan 422."""
+    """Tanpa field pertanyaan harus kena 422."""
     payload = {"top_k": 3}
     response = test_client.post("/api/ask", json=payload)
     assert response.status_code == 422
 
 
 def test_ask_returns_422_with_short_pertanyaan(test_client):
-    """Pertanyaan kurang dari 3 karakter harus ditolak (min_length=3)."""
+    """Pertanyaan kurang dari 3 karakter harus ditolak."""
     payload = {"pertanyaan": "ab"}
     response = test_client.post("/api/ask", json=payload)
     assert response.status_code == 422
@@ -42,11 +39,11 @@ def test_ask_returns_422_with_invalid_top_k(test_client):
 
 
 def test_ask_default_top_k_is_3(test_client, mock_rag_service):
-    """Jika top_k tidak disertakan, default-nya harus 3."""
+    """Kalau top_k tidak diisi, defaultnya harus 3."""
     payload = {"pertanyaan": "Apa itu taqwa?"}
     response = test_client.post("/api/ask", json=payload)
     assert response.status_code == 200
-    # Cek bahwa rag_service.answer dipanggil dengan top_k=3
+    # pastikan rag_service.answer dipanggil dengan top_k=3
     mock_rag_service.answer.assert_called_once_with(
         pertanyaan="Apa itu taqwa?", top_k=3
     )
@@ -80,18 +77,16 @@ def test_ask_with_referensi(test_client, mock_rag_service):
 
 
 def test_ask_empty_body_returns_422(test_client):
-    """POST /api/ask dengan body kosong harus mengembalikan 422."""
+    """Body kosong harus kena 422."""
     response = test_client.post("/api/ask", json={})
     assert response.status_code == 422
 
 
 def test_rate_limiter(mock_rag_service):
-    """Rate limiter harus mengembalikan 429 setelah melebihi batas 10/minute.
-
-    Karena slowapi Limiter adalah singleton di level modul, state-nya
-    bisa ter-akumulasi dari test sebelumnya. Test ini memverifikasi bahwa
-    429 PASTI terjadi dalam 15 request (lebih dari cukup untuk limit 10/min).
-    """
+    """Rate limiter harus kembalikan 429 setelah melebihi batas 10/minute.
+    Slowapi Limiter singleton di level modul, jadi statenya bisa
+    ter-akumulasi dari test sebelumnya. Test ini verifikasi bahwa
+    429 pasti terjadi dalam 15 request."""
     from unittest.mock import patch
     from fastapi.testclient import TestClient
     from app.tests.conftest import get_test_settings

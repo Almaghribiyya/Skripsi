@@ -11,14 +11,7 @@ import 'drawer/chat_session_grouped_list.dart';
 import 'drawer/drawer_footer_navigation.dart';
 import 'drawer/drawer_user_profile.dart';
 
-/// Production-ready chat history navigation drawer.
-///
-/// Structure (top → bottom):
-///   DrawerHeaderNewChat → Search Bar → ChatSessionGroupedList (scrollable, time-grouped)
-///   → DrawerFooterNavigation → DrawerUserProfile
-///
-/// Integrates with [ChatViewModel] via Provider and exposes all required
-/// callbacks: session selection, new chat, rename, delete, logout.
+// drawer navigasi riwayat chat, terintegrasi dengan ChatViewModel via Provider
 class SidebarMenu extends StatefulWidget {
   const SidebarMenu({super.key});
 
@@ -44,13 +37,13 @@ class _SidebarMenuState extends State<SidebarMenu> {
     super.dispose();
   }
 
-  /// Filter sessions by title or message content matching the search query.
+  // filter sesi berdasarkan judul atau isi pesan sesuai query pencarian
   List<ChatSession> _filterSessions(List<ChatSession> sessions) {
     if (_searchQuery.isEmpty) return sessions;
     return sessions.where((session) {
-      // Match session title
+      // cocokkan judul sesi
       if (session.title.toLowerCase().contains(_searchQuery)) return true;
-      // Match message content
+      // cocokkan isi pesan
       return session.messages.any(
         (msg) => msg.text.toLowerCase().contains(_searchQuery),
       );
@@ -87,7 +80,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
 
               return Column(
                 children: [
-                  // ── Header: New Chat button ──
+                  // tombol chat baru
                   DrawerHeaderNewChat(
                     onPressed: () {
                       viewModel.createNewSession();
@@ -96,10 +89,10 @@ class _SidebarMenuState extends State<SidebarMenu> {
                     },
                   ),
 
-                  // ── Search bar ──
+                  // kolom pencarian
                   _buildSearchBar(isDark),
 
-                  // ── Scrollable grouped chat history ──
+                  // daftar riwayat chat yang bisa di-scroll
                   Expanded(
                     child: Scrollbar(
                       thickness: 6,
@@ -130,7 +123,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                     ),
                   ),
 
-                  // ── Footer ──
+                  // bagian footer
                   Container(
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     decoration: BoxDecoration(
@@ -148,7 +141,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Settings & About
+                        // pengaturan dan tentang
                         DrawerFooterNavigation(
                           onSettings: () {
                             Navigator.pop(context);
@@ -159,7 +152,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
                             _showAboutDialog(context);
                           },
                         ),
-                        // Profil pengguna — navigasi ke pengaturan saat ditekan
+                        // profil pengguna, buka pengaturan kalau ditekan
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
@@ -190,7 +183,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
     );
   }
 
-  /// Search bar widget for filtering chat sessions.
+  // widget search bar buat filter sesi chat
   Widget _buildSearchBar(bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -240,7 +233,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
     );
   }
 
-  /// Dialog tentang aplikasi Qur'an RAG.
+  // dialog tentang aplikasi Qur'an RAG
   void _showAboutDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -408,7 +401,7 @@ class _SidebarMenuState extends State<SidebarMenu> {
     );
   }
 
-  /// Dialog ganti nama obrolan.
+  // dialog buat ganti nama obrolan
   void _showRenameDialog(
     BuildContext context,
     ChatViewModel viewModel,

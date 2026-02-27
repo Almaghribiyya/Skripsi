@@ -5,8 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../config/app_theme.dart';
 import '../../../viewmodels/chat_viewmodel.dart';
 
-/// Area input pesan mengambang di bawah layar dengan backdrop blur,
-/// auto-resize multiline, dan tombol kirim.
+// area input pesan mengambang dengan backdrop blur dan auto-resize
 class ChatInputComposer extends StatefulWidget {
   const ChatInputComposer({super.key});
 
@@ -76,7 +75,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Banner edit mode
+                // banner mode edit
                 Consumer<ChatViewModel>(
                   builder: (context, vm, _) {
                     if (!vm.isEditingMessage) return const SizedBox.shrink();
@@ -130,7 +129,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                     );
                   },
                 ),
-                // Kontainer input
+                // kontainer input
                 Container(
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.inputSurface : Colors.white,
@@ -151,7 +150,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Kolom teks
+                      // kolom teks
                       Expanded(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxHeight: 128),
@@ -183,7 +182,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                           ),
                         ),
                       ),
-                      // Tombol kirim / stop
+                      // tombol kirim / stop
                       Padding(
                         padding: const EdgeInsets.only(right: 6),
                         child: Consumer<ChatViewModel>(
@@ -203,7 +202,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
                     ],
                   ),
                 ),
-                // Disclaimer
+                // disclaimer
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
@@ -225,7 +224,7 @@ class _ChatInputComposerState extends State<ChatInputComposer> {
   }
 }
 
-/// Animated send button with active:scale-95 press feedback.
+// tombol kirim dengan animasi tekan
 class _SendButton extends StatefulWidget {
   const _SendButton({required this.enabled, required this.onPressed});
 
@@ -285,9 +284,7 @@ class _SendButtonState extends State<_SendButton> {
   }
 }
 
-/// Animated stop button shown during AI response generation.
-/// Uses a pulsing animation to indicate active processing, similar to
-/// Gemini/ChatGPT mobile.
+// tombol stop saat AI sedang generate jawaban, ada animasi pulse
 class _StopButton extends StatefulWidget {
   const _StopButton({required this.onPressed});
 

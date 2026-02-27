@@ -1,40 +1,36 @@
-/// Konfigurasi terpusat untuk koneksi API backend.
-///
-/// Menggunakan pattern kIsWeb untuk otomatis memilih URL yang tepat:
-/// - Web: localhost (same-origin)
-/// - Mobile: IP jaringan lokal / production URL
-///
-/// Untuk production, ganti [_productionUrl] dengan URL deployment.
+// konfigurasi koneksi ke backend api.
+// otomatis pilih url berdasarkan platform: web pakai localhost,
+// mobile pakai ip jaringan lokal atau url production.
 library;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 abstract final class ApiConfig {
-  /// Timeout untuk HTTP request ke backend (dalam detik).
+  // batas waktu http request ke backend (dalam detik)
   static const int timeoutSeconds = 60;
 
-  /// Jumlah retry jika request gagal karena network error.
+  // jumlah retry kalau request gagal karena masalah jaringan
   static const int maxRetries = 2;
 
-  /// Delay antar retry (dalam milidetik).
+  // jeda antar retry (dalam milidetik)
   static const int retryDelayMs = 1500;
 
-  /// Base URL untuk development — Web
+  // url development untuk web
   static const String _webDevUrl = 'http://localhost:8000';
 
-  /// Base URL untuk development — Mobile (sesuaikan IP lokal Anda)
+  // url development untuk mobile (sesuaikan ip lokal)
   static const String _mobileDevUrl = 'http://192.168.0.110:8000';
 
   // ignore: unused_field
-  /// Base URL untuk production (ganti saat deployment)
+  // url production (ganti saat deployment)
   static const String _productionUrl = 'http://192.168.0.110:8000';
 
-  /// Base URL yang digunakan, ditentukan otomatis berdasarkan platform.
+  // base url dipilih otomatis berdasarkan platform
   static String get baseUrl => kIsWeb ? _webDevUrl : _mobileDevUrl;
 
-  /// Endpoint Q&A utama.
+  // endpoint tanya jawab utama
   static String get askEndpoint => '$baseUrl/api/ask';
 
-  /// Endpoint health check.
+  // endpoint health check
   static String get healthEndpoint => '$baseUrl/health';
 }

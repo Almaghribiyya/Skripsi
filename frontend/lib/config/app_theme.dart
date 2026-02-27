@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Centralized color palette derived from the HTML Tailwind config.
+// palet warna yang dipakai di seluruh aplikasi
 abstract final class AppColors {
   // Primary
   static const Color primary = Color(0xFF10B77F);
@@ -48,9 +48,9 @@ abstract final class AppColors {
   static const Color scrollThumb = Color(0xFF23483C);
 }
 
-/// App-wide theme configuration with light & dark modes.
+// konfigurasi tema aplikasi untuk mode terang dan gelap
 abstract final class AppTheme {
-  // ─── Dark Theme ───────────────────────────────────────────────────────
+  // tema gelap
   static ThemeData get dark {
     final base = ThemeData.dark(useMaterial3: true);
     return base.copyWith(
@@ -105,7 +105,7 @@ abstract final class AppTheme {
     );
   }
 
-  // ─── Light Theme ──────────────────────────────────────────────────────
+  // tema terang
   static ThemeData get light {
     final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
@@ -160,7 +160,7 @@ abstract final class AppTheme {
     );
   }
 
-  // ─── Shared Text Theme ────────────────────────────────────────────────
+  // text theme yang dipakai bersama oleh kedua mode tema
   static TextTheme _buildTextTheme(TextTheme base, Color defaultColor) {
     return GoogleFonts.interTextTheme(base).copyWith(
       displayLarge: GoogleFonts.inter(

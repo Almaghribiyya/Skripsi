@@ -1,12 +1,6 @@
-"""
-EmbeddingService — Tanggung jawab tunggal: inisialisasi model embedding
-dan operasi retrieval terhadap Qdrant vector store.
-
-Prinsip arsitektural:
-- Lazy initialization via singleton pattern agar model hanya dimuat sekali.
-- Method `retrieve()` mengembalikan data terstruktur, bukan objek LangChain,
-  sehingga layer di atasnya tidak terikat pada implementasi vector store.
-"""
+# service untuk mengelola model embedding dan operasi retrieval
+# ke qdrant vector store. retrieve() mengembalikan data terstruktur
+# supaya layer di atasnya tidak perlu tahu detail langchain.
 
 import logging
 from dataclasses import dataclass
@@ -22,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RetrievedChunk:
-    """Representasi satu chunk hasil retrieval dari vector store."""
+    """Satu chunk hasil similarity search dari Qdrant."""
 
     score: float
     nama_surah: str
@@ -34,15 +28,19 @@ class RetrievedChunk:
 
 
 class EmbeddingService:
-    """Mengelola koneksi ke Qdrant dan operasi similarity search."""
+    """Koneksi ke Qdrant dan operasi similarity search."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+
+        # inisialisasi model embedding huggingface dengan normalisasi
         self._embeddings = HuggingFaceEmbeddings(
             model_name=settings.embedding_model,
             model_kwargs={"device": settings.embedding_device},
             encode_kwargs={"normalize_embeddings": True},
         )
+
+        # setup koneksi ke qdrant dan vector store langchain
         self._qdrant_client = QdrantClient(url=settings.qdrant_url)
         self._vector_store = QdrantVectorStore(
             client=self._qdrant_client,
@@ -57,12 +55,7 @@ class EmbeddingService:
         )
 
     def retrieve(self, query: str, top_k: int = 3) -> list[RetrievedChunk]:
-        """
-        Melakukan similarity search terhadap query pengguna.
-
-        Returns:
-            List[RetrievedChunk] diurutkan dari skor tertinggi.
-        """
+        """Cari ayat yang paling mirip dengan pertanyaan user."""
         raw_results = self._vector_store.similarity_search_with_score(
             query=query, k=top_k
         )
@@ -82,7 +75,7 @@ class EmbeddingService:
                 )
             )
 
-        # Urutkan descending berdasarkan skor (cosine similarity)
+        # urutkan dari skor cosine similarity tertinggi ke terendah
         chunks.sort(key=lambda c: c.score, reverse=True)
         return chunks
 

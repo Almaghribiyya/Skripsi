@@ -9,7 +9,7 @@ class AuthService {
         '890020745806-6pbkspf5cfqsr8aajtgqeh8qkt16dvg6.apps.googleusercontent.com',
   );
 
-  // 1. Pendaftaran dengan Email & Password
+  // pendaftaran dengan email dan password
   Future<UserCredential?> signUpWithEmail(String email, String password) async {
     try {
       return await _auth.createUserWithEmailAndPassword(
@@ -21,7 +21,7 @@ class AuthService {
     }
   }
 
-  // 2. Login dengan Email & Password
+  // login dengan email dan password
   Future<UserCredential?> signInWithEmail(String email, String password) async {
     try {
       return await _auth.signInWithEmailAndPassword(
@@ -33,33 +33,33 @@ class AuthService {
     }
   }
 
-  // 3. Login dengan Google
+  // login dengan google
   Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Mulai proses login Google
+      // mulai proses login google
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      // Jika pengguna membatalkan dialog login
+      // kalau pengguna membatalkan dialog login
       if (googleUser == null) return null;
 
-      // Dapatkan token autentikasi
+      // dapatkan token autentikasi
       final GoogleSignInAuthentication googleAuth = 
           await googleUser.authentication;
 
-      // Buat credential Firebase
+      // buat credential firebase
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Login ke Firebase menggunakan credential Google
+      // login ke firebase pakai credential google
       return await _auth.signInWithCredential(credential);
     } catch (e) {
       rethrow;
     }
   }
 
-  // 4. Logout
+  // logout
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _auth.signOut();

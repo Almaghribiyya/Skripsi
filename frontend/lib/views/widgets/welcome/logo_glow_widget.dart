@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/app_theme.dart';
 
-/// Animated logo icon with gradient glow halo effect.
-///
-/// Replicates the HTML `.group` + `blur` glow around the menu_book icon.
+// Widget logo dengan efek cahaya gradient animasi
 class LogoGlowWidget extends StatefulWidget {
   const LogoGlowWidget({super.key});
 
@@ -42,7 +40,7 @@ class _LogoGlowWidgetState extends State<LogoGlowWidget>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Outer glow halo
+            // lingkaran cahaya luar
             Container(
               width: 130,
               height: 130,
@@ -63,7 +61,7 @@ class _LogoGlowWidgetState extends State<LogoGlowWidget>
                 ],
               ),
             ),
-            // Icon container — rounded square (rounded-3xl ≈ 24px)
+            // kontainer ikon dengan sudut membulat
             Container(
               width: 112,
               height: 112,

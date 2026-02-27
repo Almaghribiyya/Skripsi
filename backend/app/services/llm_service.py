@@ -1,17 +1,7 @@
-"""
-LLMService — Tanggung jawab tunggal: memanggil LLM dengan mekanisme fallback.
-
-Arsitektur fallback bertingkat:
-  1. Primary LLM  (Gemini 2.5 Flash) — model terbaru, kualitas terbaik.
-  2. Fallback LLM (Gemini 2.0 Flash) — model stabil sebagai cadangan.
-  3. Retrieval-Only Mode — jika semua LLM gagal, kembalikan pesan fallback statis
-     dan biarkan layer atasnya mengembalikan referensi ayat tanpa analisis AI.
-
-Keputusan arsitektural: Menggunakan LLM lokal (Ollama, llama.cpp) tidak
-memungkinkan secara spesifikasi perangkat keras (sesuai catatan sidang).
-Oleh karena itu, dua instance Gemini yang berbeda digunakan sebagai primary
-dan fallback untuk meminimalkan risiko downtime API.
-"""
+# service untuk memanggil llm google gemini dengan mekanisme fallback.
+# kalau primary model gagal, coba fallback model.
+# kalau dua-duanya gagal, kembalikan pesan statis dan biarkan user
+# tetap dapat referensi ayat tanpa analisis ai.
 
 import logging
 
@@ -22,8 +12,8 @@ from app.config import Settings
 
 logger = logging.getLogger(__name__)
 
-# ── Prompt Template (Grounded Generation + Negative Rejection) ────────────
-
+# template prompt untuk grounded generation dan negative rejection.
+# llm hanya boleh jawab berdasarkan konteks yang diberikan.
 QURAN_QA_PROMPT = PromptTemplate(
     input_variables=["konteks", "pertanyaan"],
     template="""Anda adalah asisten virtual Islami yang bertugas menjawab pertanyaan berdasarkan Al-Qur'an.
@@ -45,6 +35,7 @@ ATURAN KETAT (Grounded Generation & Negative Rejection):
 Jawaban:""",
 )
 
+# pesan kalau semua llm gagal, user tetap dapat ayat referensi
 FALLBACK_MESSAGE = (
     "Mohon maaf, mesin penalaran AI kami sedang mengalami gangguan. "
     "Namun, berikut adalah ayat-ayat yang paling relevan dengan "
@@ -53,12 +44,12 @@ FALLBACK_MESSAGE = (
 
 
 class LLMService:
-    """Mengelola panggilan LLM dengan mekanisme fallback bertingkat."""
+    """Panggilan LLM dengan fallback bertingkat: primary, fallback, statis."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-        # Primary LLM
+        # model utama, biasanya gemini versi terbaru
         self._primary = ChatGoogleGenerativeAI(
             model=settings.llm_primary_model,
             google_api_key=settings.gemini_api_key,
@@ -66,7 +57,7 @@ class LLMService:
         )
         logger.info("LLM Primary initialized: %s", settings.llm_primary_model)
 
-        # Fallback LLM (model berbeda untuk redundansi)
+        # model cadangan, dipakai kalau primary gagal
         self._fallback = ChatGoogleGenerativeAI(
             model=settings.llm_fallback_model,
             google_api_key=settings.gemini_api_key,
@@ -75,20 +66,12 @@ class LLMService:
         logger.info("LLM Fallback initialized: %s", settings.llm_fallback_model)
 
     def generate(self, konteks: str, pertanyaan: str) -> str:
-        """
-        Memanggil LLM untuk menghasilkan jawaban.
-
-        Fallback chain:
-          primary → fallback → static message.
-
-        Returns:
-            Jawaban string dari LLM atau pesan fallback statis.
-        """
+        """Panggil llm untuk generate jawaban, dengan fallback chain."""
         prompt_text = QURAN_QA_PROMPT.format(
             konteks=konteks, pertanyaan=pertanyaan
         )
 
-        # Tahap 1: Primary LLM
+        # coba dulu pakai primary model
         try:
             response = self._primary.invoke(prompt_text)
             logger.info("LLM Primary berhasil menjawab.")
@@ -96,7 +79,7 @@ class LLMService:
         except Exception as e:
             logger.warning("LLM Primary gagal: %s. Mencoba fallback...", str(e))
 
-        # Tahap 2: Fallback LLM
+        # primary gagal, coba fallback model
         try:
             response = self._fallback.invoke(prompt_text)
             logger.info("LLM Fallback berhasil menjawab.")
@@ -104,5 +87,5 @@ class LLMService:
         except Exception as e:
             logger.error("LLM Fallback juga gagal: %s. Menggunakan mode retrieval-only.", str(e))
 
-        # Tahap 3: Retrieval-Only Mode (semua LLM gagal)
+        # semua llm gagal, kembalikan pesan statis
         return FALLBACK_MESSAGE

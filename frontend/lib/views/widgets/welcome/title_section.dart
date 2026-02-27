@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// Title section with "Welcome to" heading + gradient "Quran AI" + subtitle.
-///
-/// Matches the HTML `<h1>` + `<p>` block with identical hierarchy.
+// Bagian judul dengan heading "Selamat Datang" dan gradient "Qur'an RAG"
 class TitleSection extends StatelessWidget {
   const TitleSection({super.key});
 
@@ -16,7 +14,7 @@ class TitleSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Heading
+          // judul utama
           Text.rich(
             TextSpan(
               children: [
@@ -42,7 +40,7 @@ class TitleSection extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,
                         height: 1.2,
-                        color: Colors.white, // masked by shader
+                        color: Colors.white, // disamarkan oleh shader
                       ),
                     ),
                   ),
@@ -52,7 +50,7 @@ class TitleSection extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          // Subtitle
+          // subjudul
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 280),
             child: Text(

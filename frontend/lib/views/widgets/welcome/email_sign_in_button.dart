@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// Secondary CTA — "Continue with Email" outlined button with mail icon
-/// and press-scale animation.
+// Tombol sekunder "Masuk / Daftar" dengan ikon email dan animasi tekan
 class EmailSignInButton extends StatefulWidget {
   const EmailSignInButton({super.key, required this.onPressed});
 
@@ -87,7 +86,7 @@ class _EmailSignInButtonState extends State<EmailSignInButton>
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: isDark
-                      ? const Color(0xFFE2E8F0) // slate-200
+                      ? const Color(0xFFE2E8F0) // warna slate-200
                       : AppColors.textDark,
                 ),
               ),

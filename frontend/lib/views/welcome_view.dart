@@ -12,11 +12,8 @@ import 'widgets/welcome/google_sign_in_button.dart';
 import 'widgets/welcome/email_sign_in_button.dart';
 import 'widgets/welcome/terms_text.dart';
 
-/// Full-screen welcome / onboarding view.
-///
-/// Replaces the old SplashView as the entry point (`/`).
-/// Layout: vertically split — top half is branding (logo + title),
-/// bottom half is image grid + action buttons + terms.
+// halaman welcome fullscreen, jadi entry point utama pengganti SplashView
+// layout dibagi dua: atas branding (logo + judul), bawah grid gambar + tombol aksi + terms
 class WelcomeView extends StatefulWidget {
   const WelcomeView({super.key});
 
@@ -30,7 +27,7 @@ class _WelcomeViewState extends State<WelcomeView>
   final FirestoreService _firestoreService = FirestoreService();
   bool _isLoading = false;
 
-  // Fade-in animation
+  // animasi fade-in waktu pertama masuk
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fadeAnim;
 
@@ -43,7 +40,7 @@ class _WelcomeViewState extends State<WelcomeView>
     )..forward();
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
 
-    // Auto-redirect if already signed in
+    // kalau user sudah login, langsung redirect ke chat
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null && mounted) {
@@ -59,7 +56,7 @@ class _WelcomeViewState extends State<WelcomeView>
     super.dispose();
   }
 
-  // ─── Auth Handlers ──────────────────────────────────────────────────
+  // handler autentikasi
 
   void _showError(String message) {
     if (!mounted) return;
@@ -79,7 +76,7 @@ class _WelcomeViewState extends State<WelcomeView>
     try {
       final result = await _authService.signInWithGoogle();
       if (result == null && FirebaseAuth.instance.currentUser == null) {
-        // User cancelled Google sign-in dialog
+        // user membatalkan dialog sign-in Google
         if (mounted) setState(() => _isLoading = false);
         return;
       }
@@ -109,16 +106,16 @@ class _WelcomeViewState extends State<WelcomeView>
     Navigator.pushNamed(context, '/login');
   }
 
-  // ─── Build ────────────────────────────────────────────────────────────
+  // tampilan utama
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Background glow ──
+          // efek glow di background
           _buildBackgroundGlow(),
-          // ── Main content ──
+          // konten utama
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnim,
@@ -131,7 +128,7 @@ class _WelcomeViewState extends State<WelcomeView>
                   child: Column(
                     children: [
                       const SizedBox(height: 32),
-                      // ── Top: Branding ──
+                      // bagian atas: branding
                       const Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -142,12 +139,12 @@ class _WelcomeViewState extends State<WelcomeView>
                           ],
                         ),
                       ),
-                      // ── Bottom: Grid + Buttons ──
+                      // bagian bawah: grid gambar + tombol
                       Column(
                         children: [
                           const ImageGridDecoration(),
                           const SizedBox(height: 32),
-                          // Buttons
+                          // tombol-tombol aksi
                           _buildButtons(),
                           const TermsText(),
                           const SizedBox(height: 32),
@@ -159,7 +156,7 @@ class _WelcomeViewState extends State<WelcomeView>
               ),
             ),
           ),
-          // ── Loading overlay ──
+          // overlay loading saat proses login
           if (_isLoading) _buildLoadingOverlay(),
         ],
       ),

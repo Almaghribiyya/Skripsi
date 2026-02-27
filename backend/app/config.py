@@ -1,9 +1,5 @@
-"""
-Konfigurasi terpusat menggunakan Pydantic Settings.
-
-Semua variabel lingkungan dimuat dari file .env di root backend/.
-Prinsip: Single Source of Truth untuk semua konfigurasi aplikasi.
-"""
+# file ini jadi satu-satunya tempat konfigurasi di seluruh backend.
+# semua variabel lingkungan dibaca dari file .env di root folder backend.
 
 import os
 from pathlib import Path
@@ -14,9 +10,10 @@ from pydantic import Field
 
 
 class Settings(BaseSettings):
-    """Immutable application settings loaded from environment variables."""
+    """Semua pengaturan aplikasi dimuat dari environment variable.
+    Pakai pydantic settings supaya otomatis validasi tipe data."""
 
-    # ── Identitas Aplikasi ────────────────────────────────────────────
+    # identitas aplikasi yang tampil di halaman docs
     app_title: str = "Pustaka Digital Al-Qur'an API (RAG)"
     app_description: str = (
         "REST API untuk Sistem Tanya Jawab Al-Qur'an "
@@ -24,25 +21,26 @@ class Settings(BaseSettings):
     )
     app_version: str = "1.0.0"
 
-    # ── Qdrant Vector Database ────────────────────────────────────────
+    # koneksi ke qdrant vector database
     qdrant_url: str = Field("http://localhost:6333", alias="QDRANT_URL")
     qdrant_collection: str = Field(
         "quran_hybrid_collection", alias="QDRANT_COLLECTION"
     )
 
-    # ── Embedding Model ──────────────────────────────────────────────
+    # model embedding untuk mengubah teks jadi vektor
     embedding_model: str = Field(
         "intfloat/multilingual-e5-base", alias="EMBEDDING_MODEL"
     )
     embedding_device: str = Field("cpu", alias="EMBEDDING_DEVICE")
 
-    # ── LLM (Google Gemini) ──────────────────────────────────────────
+    # konfigurasi llm google gemini untuk generate jawaban
     gemini_api_key: str = Field("", alias="GEMINI_API_KEY")
     llm_primary_model: str = Field("gemini-2.5-flash", alias="LLM_PRIMARY_MODEL")
     llm_fallback_model: str = Field("gemini-2.0-flash", alias="LLM_FALLBACK_MODEL")
     llm_temperature: float = Field(0.3, alias="LLM_TEMPERATURE")
 
-    # ── RAG Tuning ───────────────────────────────────────────────────
+    # skor minimum cosine similarity untuk dianggap relevan.
+    # kalau di bawah ambang ini, sistem langsung tolak tanpa panggil llm.
     similarity_threshold: float = Field(
         0.45,
         alias="SIMILARITY_THRESHOLD",
@@ -52,10 +50,11 @@ class Settings(BaseSettings):
         ),
     )
 
-    # ── Rate Limiting ────────────────────────────────────────────────
+    # batas jumlah request per menit dari satu ip
     rate_limit: str = Field("10/minute", alias="RATE_LIMIT")
 
-    # ── Firebase Authentication ──────────────────────────────────────
+    # path ke file credential firebase dan toggle autentikasi.
+    # set auth_enabled false kalau mau development tanpa firebase.
     firebase_credentials_path: str = Field("", alias="FIREBASE_CREDENTIALS_PATH")
     auth_enabled: bool = Field(
         True,
@@ -63,7 +62,7 @@ class Settings(BaseSettings):
         description="Nonaktifkan untuk development tanpa Firebase.",
     )
 
-    # ── CORS ─────────────────────────────────────────────────────────
+    # daftar origin yang diizinkan untuk cors
     cors_origins: list[str] = Field(default=["*"], alias="CORS_ORIGINS")
 
     model_config = {
@@ -76,5 +75,5 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    """Mengembalikan instance Settings yang di-cache (singleton)."""
+    """Ambil instance settings yang sudah di-cache supaya tidak buat ulang."""
     return Settings()

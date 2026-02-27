@@ -5,12 +5,7 @@ import '../../../models/message_model.dart';
 import 'ai_reference_card.dart';
 import 'message_action_chips.dart';
 
-/// AI message bubble — left-aligned with avatar, header, colored surface,
-/// optional reference cards, and action chips.
-///
-/// Matches HTML: AI avatar (primary/20 circle + icon) • "Quran AI" label •
-/// timestamp • rounded-2xl rounded-tl-sm bg-[#23483c] bubble • references •
-/// action chips.
+// bubble pesan AI, rata kiri dengan avatar dan referensi ayat
 class AiMessageBubble extends StatelessWidget {
   const AiMessageBubble({
     super.key,
@@ -34,15 +29,15 @@ class AiMessageBubble extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AI avatar
+          // avatar AI
           _buildAvatar(),
           const SizedBox(width: 12),
-          // Content column
+          // kolom konten
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: "Quran AI" + timestamp
+                // header: nama AI + waktu
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
@@ -68,7 +63,7 @@ class AiMessageBubble extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Message bubble
+                // bubble pesan
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -93,13 +88,13 @@ class AiMessageBubble extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Reference cards
+                // kartu referensi
                 if (message.verseReferences != null &&
                     message.verseReferences!.isNotEmpty)
                   ...message.verseReferences!.map(
                     (ref) => AiReferenceCard(reference: ref),
                   ),
-                // Action chips
+                // tombol aksi
                 MessageActionChips(
                   messageText: message.text,
                   messageId: message.id,
@@ -107,7 +102,7 @@ class AiMessageBubble extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 16), // right margin
+          const SizedBox(width: 16), // margin kanan
         ],
       ),
     );

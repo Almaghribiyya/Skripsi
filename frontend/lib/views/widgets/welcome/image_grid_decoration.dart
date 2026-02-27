@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/app_theme.dart';
 
-/// Decorative 3-column image grid with offset middle item.
-///
-/// Matches the HTML `.grid.grid-cols-3` block with `translate-y-4` on the
-/// center cell, `opacity-60` on the grid, and `opacity-70` on each image.
+// Grid gambar dekoratif 3 kolom dengan item tengah digeser ke bawah
 class ImageGridDecoration extends StatelessWidget {
   const ImageGridDecoration({super.key});
 
@@ -27,7 +24,7 @@ class ImageGridDecoration extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Transform.translate(
-                  // Middle item offset 16px down (translate-y-4)
+                  // item tengah digeser 16px ke bawah
                   offset: Offset(0, index == 1 ? 16 : 0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// Footer navigation section with Settings and About buttons.
+// navigasi footer dengan tombol Pengaturan dan Tentang
 class DrawerFooterNavigation extends StatelessWidget {
   const DrawerFooterNavigation({
     super.key,

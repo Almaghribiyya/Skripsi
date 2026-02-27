@@ -1,18 +1,14 @@
-"""
-Pydantic schemas untuk request/response REST API.
-
-Dipisahkan dari business logic agar memenuhi prinsip
-Single Responsibility dan mempermudah dokumentasi OpenAPI.
-"""
+# pydantic schema untuk request dan response rest api.
+# dipisahkan dari business logic supaya file tetap fokus
+# dan dokumentasi openapi otomatis terbentuk dari sini.
 
 from pydantic import BaseModel, Field
 
 
-# ── Request Schema ───────────────────────────────────────────────────
-
+# schema untuk request masuk dari user
 
 class QueryRequest(BaseModel):
-    """Payload pertanyaan pengguna ke endpoint /api/ask."""
+    """Payload pertanyaan yang dikirim user ke endpoint tanya jawab."""
 
     pertanyaan: str = Field(
         ...,
@@ -29,11 +25,10 @@ class QueryRequest(BaseModel):
     )
 
 
-# ── Response Schemas ─────────────────────────────────────────────────
-
+# schema untuk response yang dikirim balik ke user
 
 class ReferensiItem(BaseModel):
-    """Satu item referensi ayat Al-Qur'an hasil retrieval."""
+    """Satu item referensi ayat yang ditemukan dari vector search."""
 
     skor_kemiripan: float = Field(
         ..., description="Skor cosine similarity (0–1, semakin tinggi semakin relevan)."
@@ -45,7 +40,7 @@ class ReferensiItem(BaseModel):
 
 
 class QueryResponse(BaseModel):
-    """Respons lengkap dari endpoint /api/ask."""
+    """Response lengkap dari endpoint tanya jawab berisi jawaban dan referensi."""
 
     status: str = Field("success", description="Status respons: 'success' atau 'error'.")
     pertanyaan: str = Field(..., description="Echo pertanyaan pengguna.")
@@ -66,14 +61,14 @@ class QueryResponse(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Respons standar untuk error."""
+    """Response standar kalau terjadi error."""
 
     status: str = Field("error")
     message: str = Field(..., description="Pesan error yang ramah pengguna.")
 
 
 class HealthResponse(BaseModel):
-    """Respons health check."""
+    """Response dari endpoint health check."""
 
     status: str
     message: str

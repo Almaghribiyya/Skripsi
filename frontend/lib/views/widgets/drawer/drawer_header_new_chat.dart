@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 
-/// Full-width "New Chat" primary action button at the top of the drawer.
-///
-/// Matches HTML: `rounded-full bg-primary shadow-lg shadow-primary/20`
-/// with `active:scale-[0.98]` press feedback.
+// tombol aksi utama "Obrolan Baru" di bagian atas drawer,
+// dengan efek scale saat ditekan
 class DrawerHeaderNewChat extends StatefulWidget {
   const DrawerHeaderNewChat({super.key, required this.onPressed});
 

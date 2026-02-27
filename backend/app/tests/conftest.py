@@ -1,10 +1,6 @@
-"""
-Pytest configuration dan shared fixtures.
-
-Fixture utama:
-  - `test_client`: TestClient dengan service yang di-mock.
-  - `mock_rag_service`: RAGService palsu untuk unit testing.
-"""
+# konfigurasi pytest dan fixture yang dipakai bersama.
+# fixture utama: test_client dengan mock service,
+# supaya test bisa jalan tanpa qdrant, llm, atau firebase.
 
 import pytest
 from unittest.mock import MagicMock, patch
@@ -16,7 +12,7 @@ from app.services.rag_service import RAGService
 
 
 def get_test_settings() -> Settings:
-    """Settings khusus untuk testing (auth dinonaktifkan)."""
+    """Settings khusus untuk testing, auth dinonaktifkan."""
     return Settings(
         auth_enabled=False,
         gemini_api_key="test-key",
@@ -29,7 +25,7 @@ def get_test_settings() -> Settings:
 
 @pytest.fixture()
 def mock_rag_service():
-    """RAGService yang di-mock — tidak membutuhkan Qdrant/LLM aktif."""
+    """RAGService palsu, tidak butuh Qdrant atau LLM aktif."""
     service = MagicMock(spec=RAGService)
     service.answer.return_value = QueryResponse(
         status="success",
@@ -43,13 +39,9 @@ def mock_rag_service():
 
 @pytest.fixture()
 def test_client(mock_rag_service):
-    """
-    TestClient dengan semua dependency yang di-mock.
-    TIDAK membutuhkan Qdrant, LLM, atau Firebase yang aktif.
-
-    init_services() di-patch agar lifespan tidak mencoba koneksi
-    ke Qdrant/LLM saat test berjalan.
-    """
+    """TestClient dengan semua dependency di-mock.
+    init_services() di-patch supaya lifespan tidak coba koneksi
+    ke Qdrant atau LLM saat test jalan."""
     with patch("app.main.init_services"):
         from app.main import app
         from app.dependencies import get_rag_service

@@ -3,10 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/app_theme.dart';
 
-/// User profile snippet at the bottom of the drawer.
-///
-/// Displays: gradient-bordered avatar with online status indicator,
-/// username, role label, and logout button.
+// widget profil pengguna di bagian bawah drawer,
+// menampilkan avatar dengan border gradient, indikator online,
+// nama pengguna, dan tombol logout
 class DrawerUserProfile extends StatelessWidget {
   const DrawerUserProfile({
     super.key,
@@ -41,14 +40,14 @@ class DrawerUserProfile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar with gradient border + online indicator
+            // avatar dengan border gradient dan indikator online
             _GradientAvatar(
               imageUrl: avatarUrl,
               isOnline: isOnline,
               isDark: isDark,
             ),
             const SizedBox(width: 12),
-            // Name
+            // nama pengguna
             Expanded(
               child: Text(
                 name,
@@ -61,7 +60,7 @@ class DrawerUserProfile extends StatelessWidget {
                 ),
               ),
             ),
-            // Logout button
+            // tombol logout
             IconButton(
               onPressed: onLogout,
               icon: Icon(
@@ -79,7 +78,7 @@ class DrawerUserProfile extends StatelessWidget {
   }
 }
 
-/// Avatar wrapped in a gradient border ring with online status dot.
+// avatar dengan border ring gradient dan titik status online
 class _GradientAvatar extends StatelessWidget {
   const _GradientAvatar({
     this.imageUrl,
@@ -98,7 +97,7 @@ class _GradientAvatar extends StatelessWidget {
       height: 40,
       child: Stack(
         children: [
-          // Gradient border
+          // border gradient
           Container(
             width: 40,
             height: 40,
@@ -149,7 +148,7 @@ class _GradientAvatar extends StatelessWidget {
               ),
             ),
           ),
-          // Online status indicator
+          // indikator status online
           if (isOnline)
             Positioned(
               bottom: 0,

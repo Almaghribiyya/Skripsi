@@ -4,10 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/app_theme.dart';
 
-/// User message bubble — right-aligned with transparent bg + border.
-///
-/// Supports copy on all prompts and edit on the last user prompt
-/// (similar to Gemini/ChatGPT mobile).
+// bubble pesan user, rata kanan dengan border transparan
 class UserMessageBubble extends StatelessWidget {
   const UserMessageBubble({
     super.key,
@@ -22,10 +19,10 @@ class UserMessageBubble extends StatelessWidget {
   final DateTime timestamp;
   final String? avatarUrl;
 
-  /// Whether this is the last user message in the conversation.
+  // apakah ini pesan user terakhir di percakapan
   final bool isLastUserMessage;
 
-  /// Called when user taps the edit button (only shown on last user message).
+  // callback saat tombol edit ditekan (hanya muncul di pesan terakhir)
   final VoidCallback? onEdit;
 
   String get _timeLabel {
@@ -55,8 +52,8 @@ class UserMessageBubble extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const SizedBox(width: 48), // left spacing for max-width
-          // Bubble + timestamp column
+          const SizedBox(width: 48), // jarak kiri biar gak full width
+          // kolom bubble + waktu
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -87,7 +84,7 @@ class UserMessageBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                // Action row: timestamp + copy + edit (last only)
+                // baris aksi: waktu + salin + edit
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: Row(
@@ -102,14 +99,14 @@ class UserMessageBubble extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      // Copy button — always shown
+                      // tombol salin, selalu tampil
                       _SmallActionButton(
                         icon: Icons.content_copy,
                         tooltip: 'Salin',
                         isDark: isDark,
                         onTap: () => _handleCopy(context),
                       ),
-                      // Edit button — only on last user message
+                      // tombol edit, cuma di pesan terakhir
                       if (isLastUserMessage && onEdit != null) ...[
                         const SizedBox(width: 4),
                         _SmallActionButton(
@@ -126,7 +123,7 @@ class UserMessageBubble extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Avatar
+          // avatar
           _buildAvatar(isDark),
         ],
       ),
@@ -166,7 +163,7 @@ class UserMessageBubble extends StatelessWidget {
   }
 }
 
-/// Small icon-only action button used below user message bubbles.
+// tombol aksi kecil di bawah bubble pesan user
 class _SmallActionButton extends StatelessWidget {
   const _SmallActionButton({
     required this.icon,

@@ -3,10 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 import '../../../models/message_model.dart';
 
-/// Expandable accordion for Quranic verse references inside AI messages.
-///
-/// Replicates the HTML `<details>` element with expand/collapse animation,
-/// verse text, and "Read Context" action.
+// kartu referensi ayat Quran yang bisa di-expand di dalam pesan AI
 class AiReferenceCard extends StatefulWidget {
   const AiReferenceCard({super.key, required this.reference});
 
@@ -61,7 +58,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ref = widget.reference;
 
-    // Build display label: "Surah Al-Baqarah 2:155" style
+    // buat label tampilan, contoh: "Surah Al-Baqarah 2:155"
     final String label =
         ref.surahName.isNotEmpty ? '${ref.surahName} ${ref.ayatNumber}' : 'Ayat ${ref.ayatNumber}';
 
@@ -77,7 +74,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // Summary / header
+          // ringkasan / header
           InkWell(
             onTap: _toggle,
             child: Padding(
@@ -112,7 +109,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
               ),
             ),
           ),
-          // Expandable body
+          // konten yang bisa di-expand
           SizeTransition(
             sizeFactor: _expandAnimation,
             axisAlignment: -1.0,
@@ -130,7 +127,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Arabic text (RTL)
+                      // teks arab (RTL)
                       if (ref.arabicText.isNotEmpty) ...[
                         Directionality(
                           textDirection: TextDirection.rtl,
@@ -145,7 +142,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
                         ),
                         const SizedBox(height: 12),
                       ],
-                      // Translation
+                      // terjemahan
                       Text(
                         '"${ref.translation}"',
                         style: GoogleFonts.inter(

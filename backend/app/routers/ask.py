@@ -1,8 +1,6 @@
-"""
-Router: Endpoint utama Q&A Al-Qur'an.
-
-POST /api/ask — Menerima pertanyaan, mengembalikan jawaban RAG + referensi ayat.
-"""
+# router untuk endpoint utama tanya jawab al-quran.
+# menerima pertanyaan user, proses lewat pipeline rag,
+# lalu kembalikan jawaban beserta referensi ayat.
 
 import logging
 
@@ -20,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Q&A Al-Qur'an"])
 
-# Rate limiter instance — akan di-share dengan app.state.limiter di main.py
+# instance rate limiter, di-share dengan app.state.limiter di main.py
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -47,13 +45,7 @@ async def ask_quran(
     rag_service: RAGService = Depends(get_rag_service),
     settings: Settings = Depends(get_settings),
 ):
-    """
-    Pipeline RAG:
-      1. Retrieval — Cosine similarity search di Qdrant.
-      2. Score Gate — Tolak jika skor di bawah threshold (grounded generation).
-      3. Generation — LLM menjawab berdasarkan konteks ayat.
-      4. Fallback — Jika LLM gagal, kembalikan referensi ayat saja.
-    """
+    """Jalankan pipeline rag: retrieval, score gate, generation, fallback."""
     uid = user.get("uid", "anonymous") if user else "auth-disabled"
     logger.info("Pertanyaan dari user=%s: '%s'", uid, payload.pertanyaan[:80])
 

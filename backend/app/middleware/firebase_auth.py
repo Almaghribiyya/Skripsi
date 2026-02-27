@@ -1,17 +1,9 @@
-"""
-Firebase Authentication Middleware untuk FastAPI.
-
-Mekanisme:
-  - Frontend (Flutter) login via Firebase Auth → mendapat ID Token.
-  - Token dikirim ke backend via header `Authorization: Bearer <token>`.
-  - Backend memverifikasi token menggunakan Firebase Admin SDK.
-  - Jika valid, request dilanjutkan dengan informasi user ter-inject.
-  - Jika tidak valid/expired, kembalikan 401 Unauthorized.
-
-Keputusan arsitektural:
-  - AUTH_ENABLED=false memungkinkan development tanpa Firebase.
-  - Dependency injection via FastAPI `Depends()` — clean & testable.
-"""
+# middleware autentikasi firebase untuk fastapi.
+# alur kerjanya: flutter login lewat firebase auth, dapat id token,
+# kirim ke backend lewat header authorization bearer, lalu backend
+# verifikasi token pakai firebase admin sdk.
+# kalau auth_enabled diset false, autentikasi dilewati sepenuhnya
+# supaya bisa development tanpa perlu setup firebase.
 
 import logging
 from typing import Optional
@@ -23,13 +15,15 @@ from app.config import Settings, get_settings
 
 logger = logging.getLogger(__name__)
 
-# Lazy-init Firebase Admin SDK (hanya saat dibutuhkan)
+# firebase admin sdk diinisialisasi secara lazy, baru jalan saat ada
+# request pertama yang butuh verifikasi token
 _firebase_app_initialized = False
 _security = HTTPBearer(auto_error=False)
 
 
 def _ensure_firebase_initialized(settings: Settings) -> None:
-    """Inisialisasi Firebase Admin SDK sekali saat pertama kali dipanggil."""
+    """Inisialisasi firebase admin sdk satu kali saja.
+    Kalau sudah pernah dipanggil, langsung skip."""
     global _firebase_app_initialized
     if _firebase_app_initialized:
         return
@@ -42,7 +36,7 @@ def _ensure_firebase_initialized(settings: Settings) -> None:
             cred = fb_credentials.Certificate(settings.firebase_credentials_path)
             firebase_admin.initialize_app(cred)
         else:
-            # Gunakan Application Default Credentials (ADC)
+            # pakai application default credentials kalau path tidak diisi
             firebase_admin.initialize_app()
 
         _firebase_app_initialized = True
@@ -57,17 +51,11 @@ async def verify_firebase_token(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(_security),
     settings: Settings = Depends(get_settings),
 ) -> Optional[dict]:
-    """
-    FastAPI dependency untuk memverifikasi Firebase ID Token.
+    """Verifikasi firebase id token dari header authorization.
+    Mengembalikan decoded token kalau valid, none kalau auth dinonaktifkan,
+    atau raise http 401 kalau token tidak valid atau kedaluwarsa."""
 
-    Returns:
-        dict berisi decoded token (uid, email, dll) jika valid.
-        None jika auth dinonaktifkan (AUTH_ENABLED=false).
-
-    Raises:
-        HTTPException 401 jika token tidak valid atau expired.
-    """
-    # Bypass auth jika dinonaktifkan (development mode)
+    # kalau auth dinonaktifkan, langsung lewat tanpa cek token
     if not settings.auth_enabled:
         return None
 
@@ -89,6 +77,7 @@ async def verify_firebase_token(
         return decoded_token
 
     except Exception as e:
+        # bedakan pesan error supaya user tahu harus ngapain
         error_msg = str(e).lower()
         if "expired" in error_msg:
             detail = "Token telah kedaluwarsa. Silakan login ulang."
