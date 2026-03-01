@@ -56,8 +56,10 @@ class EmbeddingService:
 
     def retrieve(self, query: str, top_k: int = 3) -> list[RetrievedChunk]:
         """Cari ayat yang paling mirip dengan pertanyaan user."""
+        # prefix "query: " wajib untuk model e5 agar similarity search optimal
+        prefixed_query = f"query: {query}"
         raw_results = self._vector_store.similarity_search_with_score(
-            query=query, k=top_k
+            query=prefixed_query, k=top_k
         )
 
         chunks: list[RetrievedChunk] = []

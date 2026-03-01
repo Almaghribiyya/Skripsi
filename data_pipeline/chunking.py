@@ -89,12 +89,14 @@ def main():
     )
 
     # buat koneksi ke qdrant yang sudah jalan di docker
-    client = QdrantClient(url=QDRANT_URL)
+    client = QdrantClient(url=QDRANT_URL, check_compatibility=False)
 
     # kalau mulai dari awal, buat collection baru dan timpa yang lama
     if uploaded_count == 0:
         print("Membuat collection baru di Qdrant (force recreate)...")
-        client.recreate_collection(
+        if client.collection_exists(COLLECTION_NAME):
+            client.delete_collection(COLLECTION_NAME)
+        client.create_collection(
             collection_name=COLLECTION_NAME,
             vectors_config=VectorParams(
                 size=EMBEDDING_DIM,
@@ -104,12 +106,11 @@ def main():
     else:
         # kalau resume, pastikan dulu collection-nya masih ada di qdrant.
         # bisa saja hilang kalau user sempat reset docker di tengah jalan.
-        collections = [c.name for c in client.get_collections().collections]
-        if COLLECTION_NAME not in collections:
+        if not client.collection_exists(COLLECTION_NAME):
             print("Collection tidak ditemukan di Qdrant. Memulai ulang dari awal...")
             uploaded_count = 0
             save_progress(0)
-            client.recreate_collection(
+            client.create_collection(
                 collection_name=COLLECTION_NAME,
                 vectors_config=VectorParams(
                     size=EMBEDDING_DIM,
@@ -145,8 +146,9 @@ def main():
         try:
             # gabungkan terjemahan dan tafsir ringkas jadi satu teks untuk di-embed.
             # format ini harus konsisten dengan yang dibaca oleh backend saat retrieval.
+            # prefix "passage: " wajib untuk model e5 agar embedding optimal.
             texts = [
-                f"Terjemahan: {item['terjemahan']}\nTafsir Ringkas: {item['tafsir_wajiz']}"
+                f"passage: Terjemahan: {item['terjemahan']}\nTafsir Ringkas: {item['tafsir_wajiz']}"
                 for item in batch_data
             ]
 
