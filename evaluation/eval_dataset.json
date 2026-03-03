@@ -1,0 +1,221 @@
+{
+  "metadata": {
+    "deskripsi": "Dataset evaluasi gold standard untuk Sistem Tanya Jawab Al-Qur'an berbasis RAG",
+    "versi": "1.0.0",
+    "total_kasus": 25,
+    "distribusi": {
+      "positif": 20,
+      "negatif": 5
+    },
+    "kategori": {
+      "akidah": "Pertanyaan seputar keyakinan dan keimanan (5 kasus)",
+      "ibadah": "Pertanyaan seputar ibadah dan perintah Allah (5 kasus)",
+      "akhlak": "Pertanyaan seputar akhlak dan budi pekerti (4 kasus)",
+      "kisah": "Pertanyaan seputar kisah dalam Al-Qur'an (3 kasus)",
+      "hukum": "Pertanyaan seputar hukum dan muamalah (3 kasus)",
+      "penolakan": "Pertanyaan non-Al-Qur'an yang harus ditolak (5 kasus)"
+    }
+  },
+  "test_cases": [
+    {
+      "id": 1,
+      "kategori": "akidah",
+      "topik": "Hari Pembalasan",
+      "pertanyaan": "Apa yang dimaksud dengan hari pembalasan dalam Al-Qur'an?",
+      "jawaban_referensi": "Hari pembalasan (Yaumiddin) disebutkan dalam Al-Qur'an sebagai hari di mana seluruh manusia akan dimintai pertanggungjawaban atas amal perbuatannya. Dalam Surah Al-Fatihah ayat 4, Allah menyatakan bahwa Dia adalah Pemilik hari pembalasan. Di hari itu hanya Allah yang berkuasa memberikan ganjaran kepada orang yang berbuat baik dan menghukum orang yang berbuat buruk.",
+      "should_answer": true
+    },
+    {
+      "id": 2,
+      "kategori": "akidah",
+      "topik": "Keesaan Allah",
+      "pertanyaan": "Bagaimana Al-Qur'an menjelaskan tentang keesaan Allah?",
+      "jawaban_referensi": "Al-Qur'an menjelaskan keesaan Allah (tauhid) dalam banyak ayat. Surah Al-Ikhlas menegaskan bahwa Allah itu Esa, tempat bergantung segala sesuatu, tidak beranak dan tidak diperanakkan, serta tidak ada sesuatu pun yang setara dengan-Nya. Konsep tauhid merupakan pondasi utama ajaran Islam yang ditekankan berulang kali dalam Al-Qur'an.",
+      "should_answer": true
+    },
+    {
+      "id": 3,
+      "kategori": "akidah",
+      "topik": "Hari Kiamat",
+      "pertanyaan": "Apa yang Al-Qur'an sampaikan tentang hari kiamat?",
+      "jawaban_referensi": "Al-Qur'an menyebutkan peristiwa hari kiamat dalam banyak surah. Dalam Surah Az-Zalzalah, disebutkan bahwa bumi akan berguncang dengan dahsyat dan mengeluarkan beban-bebannya. Setiap manusia akan diperlihatkan amal perbuatannya, sekecil biji sawi sekalipun. Hari kiamat merupakan peristiwa yang pasti terjadi dan menjadi salah satu rukun iman dalam Islam.",
+      "should_answer": true
+    },
+    {
+      "id": 4,
+      "kategori": "akidah",
+      "topik": "Malaikat",
+      "pertanyaan": "Siapa saja malaikat yang disebutkan dalam Al-Qur'an?",
+      "jawaban_referensi": "Al-Qur'an menyebutkan beberapa malaikat, di antaranya Jibril yang bertugas menyampaikan wahyu kepada para nabi, dan Mikail yang mengatur rezeki. Malaikat-malaikat adalah makhluk Allah yang diciptakan dari cahaya dan senantiasa taat melaksanakan perintah Allah. Beriman kepada malaikat merupakan salah satu rukun iman dalam Islam.",
+      "should_answer": true
+    },
+    {
+      "id": 5,
+      "kategori": "akidah",
+      "topik": "Takdir",
+      "pertanyaan": "Bagaimana konsep takdir dalam Al-Qur'an?",
+      "jawaban_referensi": "Konsep takdir dalam Al-Qur'an menjelaskan bahwa segala sesuatu telah ditentukan oleh Allah. Dalam Surah Al-Qamar ayat 49, Allah menyatakan bahwa segala sesuatu diciptakan menurut ukuran. Meski demikian, manusia tetap diminta untuk berikhtiar dan berusaha sambil bertawakal kepada Allah, karena manusia diberi akal dan kebebasan memilih.",
+      "should_answer": true
+    },
+    {
+      "id": 6,
+      "kategori": "ibadah",
+      "topik": "Shalat",
+      "pertanyaan": "Ayat apa saja yang membahas tentang perintah shalat?",
+      "jawaban_referensi": "Al-Qur'an memerintahkan umat Islam untuk mendirikan shalat di banyak ayat. Dalam Surah Al-Baqarah ayat 43, Allah berfirman agar mendirikan shalat, menunaikan zakat, dan rukuk bersama orang-orang yang rukuk. Shalat merupakan ibadah paling utama dalam Islam dan menjadi tiang agama yang menghubungkan seorang hamba dengan Tuhannya.",
+      "should_answer": true
+    },
+    {
+      "id": 7,
+      "kategori": "ibadah",
+      "topik": "Puasa",
+      "pertanyaan": "Apa yang Al-Qur'an sampaikan tentang puasa?",
+      "jawaban_referensi": "Al-Qur'an menjelaskan tentang kewajiban puasa dalam Surah Al-Baqarah ayat 183, di mana Allah mewajibkan puasa atas orang-orang beriman sebagaimana diwajibkan atas umat sebelumnya, agar mereka bertakwa. Puasa merupakan sarana untuk meningkatkan ketakwaan, melatih pengendalian diri, dan menumbuhkan empati terhadap sesama.",
+      "should_answer": true
+    },
+    {
+      "id": 8,
+      "kategori": "ibadah",
+      "topik": "Zakat",
+      "pertanyaan": "Bagaimana Al-Qur'an menjelaskan kewajiban zakat?",
+      "jawaban_referensi": "Kewajiban zakat dijelaskan dalam banyak ayat Al-Qur'an, sering disebutkan bersamaan dengan perintah shalat. Dalam Surah At-Taubah ayat 103, Allah memerintahkan untuk mengambil zakat dari harta mereka guna membersihkan dan menyucikan mereka. Zakat berfungsi sebagai instrumen keadilan sosial dan pemerataan kekayaan dalam Islam.",
+      "should_answer": true
+    },
+    {
+      "id": 9,
+      "kategori": "ibadah",
+      "topik": "Haji",
+      "pertanyaan": "Ayat mana yang membahas tentang ibadah haji?",
+      "jawaban_referensi": "Ibadah haji dibahas dalam Surah Ali Imran ayat 97, di mana Allah mewajibkan manusia yang mampu untuk melakukan perjalanan ke Baitullah. Haji merupakan rukun Islam kelima yang menyimbolkan kesetaraan dan persaudaraan umat Islam dari seluruh penjuru dunia yang berkumpul di tanah suci.",
+      "should_answer": true
+    },
+    {
+      "id": 10,
+      "kategori": "ibadah",
+      "topik": "Doa",
+      "pertanyaan": "Apa yang Al-Qur'an ajarkan tentang berdoa kepada Allah?",
+      "jawaban_referensi": "Al-Qur'an mengajarkan pentingnya berdoa kepada Allah. Dalam Surah Al-Baqarah ayat 186, Allah menyatakan bahwa Dia sangat dekat dan mengabulkan permohonan orang yang berdoa apabila ia memohon kepada-Nya. Doa merupakan inti ibadah dan bentuk pengakuan manusia akan ketergantungannya kepada Allah.",
+      "should_answer": true
+    },
+    {
+      "id": 11,
+      "kategori": "akhlak",
+      "topik": "Berbakti Orang Tua",
+      "pertanyaan": "Bagaimana Al-Qur'an mengajarkan tentang berbakti kepada orang tua?",
+      "jawaban_referensi": "Al-Qur'an sangat menekankan perintah berbakti kepada orang tua. Dalam Surah Al-Isra ayat 23-24, Allah memerintahkan untuk beribadah hanya kepada-Nya dan berbuat baik kepada ibu bapak. Allah melarang mengatakan kata kasar kepada mereka dan memerintahkan untuk mendoakan mereka sebagaimana mereka merawat dan mendidik di waktu kecil.",
+      "should_answer": true
+    },
+    {
+      "id": 12,
+      "kategori": "akhlak",
+      "topik": "Kejujuran",
+      "pertanyaan": "Apa yang Al-Qur'an katakan tentang kejujuran?",
+      "jawaban_referensi": "Kejujuran sangat ditekankan dalam Al-Qur'an. Dalam Surah At-Taubah ayat 119, Allah memerintahkan orang-orang beriman untuk bertakwa dan bersama orang-orang yang jujur (ash-shadiqin). Kejujuran merupakan sifat terpuji yang dicintai Allah dan menjadi fondasi kehidupan bermasyarakat yang baik.",
+      "should_answer": true
+    },
+    {
+      "id": 13,
+      "kategori": "akhlak",
+      "topik": "Syukur",
+      "pertanyaan": "Bagaimana konsep syukur dalam Al-Qur'an?",
+      "jawaban_referensi": "Konsep syukur sangat penting dalam Al-Qur'an. Dalam Surah Ibrahim ayat 7, Allah menjanjikan bahwa jika manusia bersyukur, niscaya Allah akan menambah nikmat-Nya. Sebaliknya, jika mengingkari nikmat, maka azab Allah sangat pedih. Syukur bukan hanya ucapan, tetapi juga menggunakan nikmat sesuai dengan apa yang diridhai Allah.",
+      "should_answer": true
+    },
+    {
+      "id": 14,
+      "kategori": "akhlak",
+      "topik": "Sabar",
+      "pertanyaan": "Apa nasihat Al-Qur'an tentang kesabaran?",
+      "jawaban_referensi": "Al-Qur'an banyak mengajarkan tentang sabar. Dalam Surah Al-Baqarah ayat 153, Allah berfirman agar orang-orang beriman memohon pertolongan dengan sabar dan shalat, karena sesungguhnya Allah bersama orang-orang yang sabar. Sabar merupakan kunci menghadapi ujian kehidupan dan akan mendatangkan pahala yang tidak terbatas.",
+      "should_answer": true
+    },
+    {
+      "id": 15,
+      "kategori": "kisah",
+      "topik": "Nabi Musa",
+      "pertanyaan": "Ceritakan kisah Nabi Musa dalam Al-Qur'an",
+      "jawaban_referensi": "Kisah Nabi Musa adalah salah satu yang paling sering disebutkan dalam Al-Qur'an. Beliau diutus kepada Fir'aun yang berlaku sewenang-wenang terhadap Bani Israil. Allah memberikan mukjizat kepada Musa dan menyelamatkan Bani Israil dengan membelah laut. Kisah ini mengajarkan tentang keteguhan iman dalam menghadapi kezaliman dan kekuasaan Allah yang Maha Besar.",
+      "should_answer": true
+    },
+    {
+      "id": 16,
+      "kategori": "kisah",
+      "topik": "Nabi Ibrahim",
+      "pertanyaan": "Apa pelajaran dari kisah Nabi Ibrahim dalam Al-Qur'an?",
+      "jawaban_referensi": "Nabi Ibrahim dikenal sebagai Khalilullah (kekasih Allah). Al-Qur'an menceritakan bagaimana beliau menghancurkan berhala kaumnya dan berdebat tentang keesaan Allah. Kisah pengorbanan Nabi Ibrahim yang diperintahkan untuk menyembelih putranya menunjukkan ketaatan dan kepatuhan luar biasa kepada perintah Allah. Beliau menjadi teladan utama dalam tauhid.",
+      "should_answer": true
+    },
+    {
+      "id": 17,
+      "kategori": "kisah",
+      "topik": "Kaum Ad",
+      "pertanyaan": "Bagaimana Al-Qur'an menceritakan kisah kaum 'Ad?",
+      "jawaban_referensi": "Kaum 'Ad adalah umat yang diutus kepada mereka Nabi Hud. Mereka dikenal dengan kekuatan fisik dan bangunan megah. Karena menolak seruan Nabi Hud untuk menyembah Allah dan berlaku sombong, Allah menghancurkan mereka dengan angin yang sangat kencang. Kisah ini menjadi pelajaran tentang akibat kesombongan dan penolakan terhadap kebenaran.",
+      "should_answer": true
+    },
+    {
+      "id": 18,
+      "kategori": "hukum",
+      "topik": "Riba",
+      "pertanyaan": "Apa hukum riba menurut Al-Qur'an?",
+      "jawaban_referensi": "Al-Qur'an dengan tegas mengharamkan riba. Dalam Surah Al-Baqarah ayat 275, Allah menjelaskan bahwa orang-orang yang memakan riba tidak dapat berdiri melainkan seperti orang yang kerasukan setan. Allah menghalalkan jual beli dan mengharamkan riba. Riba dilarang karena mengandung unsur kezaliman dan eksploitasi terhadap pihak yang lemah.",
+      "should_answer": true
+    },
+    {
+      "id": 19,
+      "kategori": "hukum",
+      "topik": "Keadilan",
+      "pertanyaan": "Bagaimana Al-Qur'an mengatur tentang keadilan?",
+      "jawaban_referensi": "Keadilan merupakan prinsip utama dalam Al-Qur'an. Dalam Surah An-Nisa ayat 135, Allah memerintahkan orang-orang beriman untuk menjadi penegak keadilan dan menjadi saksi karena Allah, walaupun terhadap diri sendiri, ibu bapak, atau kerabat dekat. Keadilan harus ditegakkan tanpa membedakan status sosial maupun kedekatan personal.",
+      "should_answer": true
+    },
+    {
+      "id": 20,
+      "kategori": "hukum",
+      "topik": "Larangan Membunuh",
+      "pertanyaan": "Apa yang Al-Qur'an sampaikan tentang larangan membunuh?",
+      "jawaban_referensi": "Al-Qur'an melarang keras membunuh jiwa manusia tanpa hak. Dalam Surah Al-Maidah ayat 32, Allah menyatakan bahwa barang siapa membunuh satu jiwa tanpa alasan yang benar, maka seakan-akan ia membunuh seluruh manusia. Dan barang siapa menyelamatkan satu jiwa, maka seakan-akan ia menyelamatkan seluruh manusia. Ayat ini menunjukkan betapa agungnya nilai kehidupan dalam Islam.",
+      "should_answer": true
+    },
+    {
+      "id": 21,
+      "kategori": "penolakan",
+      "topik": "Pemrograman",
+      "pertanyaan": "Bagaimana cara membuat program Python untuk web scraping?",
+      "jawaban_referensi": "",
+      "should_answer": false
+    },
+    {
+      "id": 22,
+      "kategori": "penolakan",
+      "topik": "Politik",
+      "pertanyaan": "Siapa presiden Indonesia yang pertama?",
+      "jawaban_referensi": "",
+      "should_answer": false
+    },
+    {
+      "id": 23,
+      "kategori": "penolakan",
+      "topik": "Sains",
+      "pertanyaan": "Jelaskan teori relativitas umum Einstein secara lengkap",
+      "jawaban_referensi": "",
+      "should_answer": false
+    },
+    {
+      "id": 24,
+      "kategori": "penolakan",
+      "topik": "Kuliner",
+      "pertanyaan": "Bagaimana cara memasak nasi goreng yang enak?",
+      "jawaban_referensi": "",
+      "should_answer": false
+    },
+    {
+      "id": 25,
+      "kategori": "penolakan",
+      "topik": "Matematika",
+      "pertanyaan": "Apa rumus luas lingkaran dan bagaimana cara menurunkannya?",
+      "jawaban_referensi": "",
+      "should_answer": false
+    }
+  ]
+}

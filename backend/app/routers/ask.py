@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Q&A Al-Qur'an"])
 
-# instance rate limiter, di-share dengan app.state.limiter di main.py
+# instance rate limiter singleton — dipakai juga oleh main.py
+# untuk exception handler. satu instance supaya state tidak terpecah.
 limiter = Limiter(key_func=get_remote_address)
 
 

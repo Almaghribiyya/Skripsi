@@ -1,0 +1,25 @@
+# ── Dependensi Evaluasi Sistem Tanya Jawab Al-Qur'an ────────────
+#
+# Diinstal TERPISAH dari backend agar Docker image tetap ringan.
+# Dependensi evaluasi cukup berat (torch, transformers, dll.)
+# dan hanya dibutuhkan saat menjalankan evaluasi untuk BAB 4.
+#
+# Instalasi:
+#   cd evaluation
+#   pip install -r requirements.txt
+
+# klien HTTP untuk memanggil backend API
+httpx>=0.28.0
+
+# format tabel di terminal
+tabulate>=0.9.0
+
+# evaluasi LLM-as-Judge (Faithfulness, Answer Relevancy)
+# menggunakan litellm untuk integrasi dengan Google Gemini
+deepeval>=1.0.0
+
+# kemiripan semantik jawaban (Precision, Recall, F1)
+bert-score>=0.3.13
+
+# memuat environment variables dari file .env
+python-dotenv>=1.1.0

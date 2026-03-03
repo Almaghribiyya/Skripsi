@@ -9,13 +9,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.dependencies import init_services
 from app.routers import health, ask
+from app.routers.ask import limiter
 
 # setup logging supaya output di terminal rapi dan mudah dibaca
 logging.basicConfig(
@@ -52,8 +52,8 @@ async def lifespan(application: FastAPI):
 # baca settings dan buat instance aplikasi
 settings = get_settings()
 
-# rate limiter untuk mencegah spam request dari satu ip
-limiter = Limiter(key_func=get_remote_address)
+# rate limiter: pakai instance tunggal dari modul ask supaya
+# state tracking request tidak terpecah di dua objek berbeda.
 
 app = FastAPI(
     title=settings.app_title,

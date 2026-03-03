@@ -2,6 +2,9 @@
 .env
 **/.env
 
+# Firebase service account credentials (sensitif — jangan commit)
+**/firebase-credentials.json
+
 # Folder Database Qdrant (Sangat penting agar database bergiga-giga tidak ikut terunggah)
 qdrant_storage/
 
@@ -12,6 +15,9 @@ env/
 # Python Cache
 __pycache__/
 *.pyc
+
+# Hasil evaluasi (generated output)
+evaluation/results/
 
 # Dataset JSON (Opsional: Hapus tanda pagar di bawah jika Anda tidak ingin JSON ikut terunggah)
 # quran_hybrid_dataset.json

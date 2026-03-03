@@ -31,7 +31,7 @@ def get_test_settings() -> Settings:
         auth_enabled=False,
         gemini_api_key="test-key",
         qdrant_url="http://localhost:6333",
-        similarity_threshold=0.45,
+        similarity_threshold=0.80,
         rate_limit="100/minute",
         _env_file=None,
     )

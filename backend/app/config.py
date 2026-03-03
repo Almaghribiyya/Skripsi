@@ -40,13 +40,18 @@ class Settings(BaseSettings):
     llm_temperature: float = Field(0.3, alias="LLM_TEMPERATURE")
 
     # skor minimum cosine similarity untuk dianggap relevan.
+    # threshold tinggi (0.80) karena sistem ini memprioritaskan reliabilitas
+    # dan mitigasi halusinasi sesuai metode RAG — hanya dokumen dengan
+    # kemiripan semantik sangat tinggi yang boleh masuk ke LLM.
     # kalau di bawah ambang ini, sistem langsung tolak tanpa panggil llm.
     similarity_threshold: float = Field(
-        0.45,
+        0.80,
         alias="SIMILARITY_THRESHOLD",
         description=(
             "Skor minimum cosine similarity. "
-            "Dokumen di bawah ambang ini dianggap tidak cukup relevan."
+            "Dokumen di bawah ambang ini dianggap tidak cukup relevan. "
+            "Nilai tinggi (0.80) untuk memprioritaskan reliabilitas "
+            "dan memitigasi risiko halusinasi pada domain keagamaan."
         ),
     )
 

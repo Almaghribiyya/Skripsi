@@ -37,7 +37,7 @@ def _make_service(llm_answer="Jawaban"):
     mock_llm.generate = AsyncMock(return_value=llm_answer)
 
     settings = MagicMock(spec=Settings)
-    settings.similarity_threshold = 0.45
+    settings.similarity_threshold = 0.80
 
     return RAGService(
         embedding_service=mock_embedding,

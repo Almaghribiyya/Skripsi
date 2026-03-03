@@ -35,7 +35,7 @@ def _make_chunk(
 def _make_rag_service(
     chunks: list[RetrievedChunk],
     llm_answer: str = "Jawaban dari LLM.",
-    threshold: float = 0.45,
+    threshold: float = 0.80,
 ) -> RAGService:
     """Bikin RAGService dengan mock async dependencies."""
     mock_embedding = MagicMock(spec=EmbeddingService)
@@ -69,12 +69,12 @@ async def test_no_chunks_returns_no_data_message():
 @pytest.mark.asyncio
 async def test_low_score_triggers_negative_rejection():
     """Skor tertinggi di bawah threshold harus trigger negative rejection."""
-    low_score_chunks = [_make_chunk(score=0.30)]
-    rag = _make_rag_service(chunks=low_score_chunks, threshold=0.45)
+    low_score_chunks = [_make_chunk(score=0.65)]
+    rag = _make_rag_service(chunks=low_score_chunks, threshold=0.80)
     result = await rag.answer("Pertanyaan tidak relevan?")
 
     assert result.jawaban_llm == LOW_RELEVANCE_MESSAGE
-    assert result.skor_tertinggi == 0.30
+    assert result.skor_tertinggi == 0.65
     assert len(result.referensi) == 1  # referensi tetap dikembalikan
 
 
@@ -111,8 +111,8 @@ async def test_multiple_chunks_sorted_by_score():
 @pytest.mark.asyncio
 async def test_exact_threshold_passes():
     """Skor yang tepat sama dengan threshold harus lolos gate."""
-    chunks = [_make_chunk(score=0.45)]
-    rag = _make_rag_service(chunks=chunks, threshold=0.45)
+    chunks = [_make_chunk(score=0.80)]
+    rag = _make_rag_service(chunks=chunks, threshold=0.80)
     result = await rag.answer("Pertanyaan pas threshold?")
 
     assert result.jawaban_llm != LOW_RELEVANCE_MESSAGE
