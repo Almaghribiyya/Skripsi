@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 
 from app.config import Settings
 
@@ -19,12 +19,17 @@ class RetrievedChunk:
     """Satu chunk hasil similarity search dari Qdrant."""
 
     score: float
+    surah: int
     nama_surah: str
     ayat: int
     teks_arab: str
+    transliterasi: str
     terjemahan: str
     tafsir_wajiz: str
     tafsir_tahlili: str
+    kategori_surah: str
+    chunk_index: int
+    total_chunks: int
 
 
 class EmbeddingService:
@@ -54,12 +59,23 @@ class EmbeddingService:
             settings.qdrant_collection,
         )
 
-    def retrieve(self, query: str, top_k: int = 3) -> list[RetrievedChunk]:
-        """Cari ayat yang paling mirip dengan pertanyaan user."""
+    def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
+        """Cari ayat yang paling mirip dengan pertanyaan user.
+
+        Menggunakan HNSW ef=128 saat search untuk memaksimalkan recall
+        tanpa mengorbankan kecepatan secara signifikan.
+        """
         # prefix "query: " wajib untuk model e5 agar similarity search optimal
         prefixed_query = f"query: {query}"
+
+        # search_params: ef tinggi untuk meningkatkan recall pada HNSW
         raw_results = self._vector_store.similarity_search_with_score(
-            query=prefixed_query, k=top_k
+            query=prefixed_query,
+            k=top_k,
+            search_params=models.SearchParams(
+                hnsw_ef=128,
+                exact=False,
+            ),
         )
 
         chunks: list[RetrievedChunk] = []
@@ -68,12 +84,17 @@ class EmbeddingService:
             chunks.append(
                 RetrievedChunk(
                     score=float(score),
+                    surah=int(meta.get("surah", 0)),
                     nama_surah=meta.get("nama_surah", "Tidak Diketahui"),
                     ayat=int(meta.get("ayat", 0)),
                     teks_arab=meta.get("teks_arab", ""),
+                    transliterasi=meta.get("transliterasi", ""),
                     terjemahan=meta.get("terjemahan", ""),
                     tafsir_wajiz=meta.get("tafsir_wajiz", ""),
                     tafsir_tahlili=meta.get("tafsir_tahlili", ""),
+                    kategori_surah=meta.get("kategori_surah", ""),
+                    chunk_index=int(meta.get("chunk_index", 0)),
+                    total_chunks=int(meta.get("total_chunks", 1)),
                 )
             )
 

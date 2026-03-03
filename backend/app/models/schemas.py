@@ -60,6 +60,9 @@ class ReferensiItem(BaseModel):
     ayat: int = Field(..., description="Nomor ayat.")
     teks_arab: str = Field(..., description="Teks Arab ayat.")
     terjemahan: str = Field(..., description="Terjemahan bahasa Indonesia.")
+    transliterasi: str = Field(
+        default="", description="Transliterasi latin dari teks Arab."
+    )
 
 
 class QueryResponse(BaseModel):

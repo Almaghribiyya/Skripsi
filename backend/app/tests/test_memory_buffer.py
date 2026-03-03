@@ -14,12 +14,17 @@ from app.services.rag_service import RAGService
 def _make_chunk(score=0.85):
     return RetrievedChunk(
         score=score,
+        surah=2,
         nama_surah="Al-Baqarah",
         ayat=255,
         teks_arab="اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ",
+        transliterasi="Allāhu lā ilāha illā huwa",
         terjemahan="Allah, tidak ada tuhan selain Dia",
         tafsir_wajiz="Ayat Kursi.",
         tafsir_tahlili="Tafsir lengkap.",
+        kategori_surah="Madaniyyah",
+        chunk_index=0,
+        total_chunks=1,
     )
 
 

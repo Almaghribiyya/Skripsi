@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/app_theme.dart';
 import '../../../models/message_model.dart';
 
-// kartu referensi ayat Quran yang bisa di-expand di dalam pesan AI
+/// Kartu referensi ayat Quran yang bisa di-expand di dalam pesan AI.
+/// Menampilkan teks Arab dengan font Amiri + RTL yang benar,
+/// diikuti transliterasi dan terjemahan Indonesia.
 class AiReferenceCard extends StatefulWidget {
   const AiReferenceCard({super.key, required this.reference});
 
@@ -58,9 +60,10 @@ class _AiReferenceCardState extends State<AiReferenceCard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ref = widget.reference;
 
-    // buat label tampilan, contoh: "Surah Al-Baqarah 2:155"
-    final String label =
-        ref.surahName.isNotEmpty ? '${ref.surahName} ${ref.ayatNumber}' : 'Ayat ${ref.ayatNumber}';
+    // buat label tampilan, contoh: "Surah Al-Baqarah : 155"
+    final String label = ref.surahName.isNotEmpty
+        ? '${ref.surahName} : ${ref.ayatNumber}'
+        : 'Ayat ${ref.ayatNumber}';
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -74,7 +77,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // ringkasan / header
+          // ─── header ────────────────────────────────────────────
           InkWell(
             onTap: _toggle,
             child: Padding(
@@ -82,7 +85,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
               child: Row(
                 children: [
                   const Icon(
-                    Icons.menu_book,
+                    Icons.menu_book_rounded,
                     size: 18,
                     color: AppColors.primary,
                   ),
@@ -109,7 +112,7 @@ class _AiReferenceCardState extends State<AiReferenceCard>
               ),
             ),
           ),
-          // konten yang bisa di-expand
+          // ─── konten expandable ─────────────────────────────────
           SizeTransition(
             sizeFactor: _expandAnimation,
             axisAlignment: -1.0,
@@ -122,33 +125,66 @@ class _AiReferenceCardState extends State<AiReferenceCard>
                       : AppColors.primary.withValues(alpha: 0.10),
                 ),
                 Padding(
-                  padding:
-                      const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 8),
+                  padding: const EdgeInsets.only(
+                      left: 16, right: 16, bottom: 16, top: 12),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // teks arab (RTL)
+                      // ── teks Arab dengan font Amiri + RTL ──────
                       if (ref.arabicText.isNotEmpty) ...[
-                        Directionality(
-                          textDirection: TextDirection.rtl,
-                          child: Text(
-                            ref.arabicText,
-                            style: TextStyle(
-                              fontSize: 22,
-                              height: 1.8,
-                              color: isDark ? Colors.white : AppColors.textDark,
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.primary.withValues(alpha: 0.08)
+                                : AppColors.primary.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              ref.arabicText,
+                              textAlign: TextAlign.right,
+                              style: GoogleFonts.amiri(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                                // height 2.2 mencegah harakat (diacritics) terpotong
+                                height: 2.2,
+                                letterSpacing: 0.5,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textDark,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 12),
                       ],
-                      // terjemahan
+                      // ── transliterasi latin ────────────────────
+                      if (ref.transliteration.isNotEmpty) ...[
+                        Text(
+                          ref.transliteration,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            fontWeight: FontWeight.w500,
+                            height: 1.5,
+                            color: isDark
+                                ? AppColors.sageLight
+                                : AppColors.sageMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      // ── terjemahan ─────────────────────────────
                       Text(
                         '"${ref.translation}"',
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontStyle: FontStyle.italic,
-                          height: 1.5,
+                          height: 1.6,
                           color: isDark
                               ? const Color(0xFF92C9B7)
                               : AppColors.textMuted,

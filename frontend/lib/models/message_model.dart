@@ -7,12 +7,14 @@ class VerseReference {
   final String ayatNumber;
   final String arabicText;
   final String translation;
+  final String transliteration;
 
   VerseReference({
     required this.surahName,
     required this.ayatNumber,
     required this.arabicText,
     required this.translation,
+    this.transliteration = '',
   });
 
   factory VerseReference.fromJson(Map<String, dynamic> json) {
@@ -21,6 +23,7 @@ class VerseReference {
       ayatNumber: (json['ayat'] ?? '').toString(),
       arabicText: json['teks_arab'] ?? '',
       translation: json['terjemahan'] ?? '',
+      transliteration: json['transliterasi'] ?? '',
     );
   }
 
@@ -29,6 +32,7 @@ class VerseReference {
         'ayat': ayatNumber,
         'teks_arab': arabicText,
         'terjemahan': translation,
+        'transliterasi': transliteration,
       };
 }
 

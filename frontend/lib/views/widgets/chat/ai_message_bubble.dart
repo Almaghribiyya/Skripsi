@@ -99,20 +99,20 @@ class AiMessageBubble extends StatelessWidget {
                       p: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
-                        height: 1.5,
+                        height: 1.7,
                         color: isDark ? AppColors.textLight : AppColors.textDark,
                       ),
                       strong: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        height: 1.5,
+                        height: 1.7,
                         color: isDark ? AppColors.textLight : AppColors.textDark,
                       ),
                       em: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
                         fontStyle: FontStyle.italic,
-                        height: 1.5,
+                        height: 1.7,
                         color: isDark ? AppColors.textLight : AppColors.textDark,
                       ),
                       h1: GoogleFonts.inter(

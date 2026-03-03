@@ -11,16 +11,21 @@ from app.services.llm_service import LLMService, FALLBACK_MESSAGE
 from app.services.rag_service import RAGService, NO_DATA_MESSAGE, LOW_RELEVANCE_MESSAGE
 
 
-def _make_chunk(score: float, surah: str = "Al-Fatihah", ayat: int = 1) -> RetrievedChunk:
+def _make_chunk(score: float, surah: str = "Al-Fatihah", ayat: int = 1, surah_num: int = 1) -> RetrievedChunk:
     """Bikin RetrievedChunk dummy untuk testing."""
     return RetrievedChunk(
         score=score,
+        surah=surah_num,
         nama_surah=surah,
         ayat=ayat,
         teks_arab="بِسْمِ اللَّهِ",
+        transliterasi="Bismillāh",
         terjemahan="Dengan nama Allah",
         tafsir_wajiz="Tafsir ringkas.",
         tafsir_tahlili="Tafsir lengkap.",
+        kategori_surah="Makkiyyah",
+        chunk_index=0,
+        total_chunks=1,
     )
 
 
@@ -84,9 +89,9 @@ def test_high_score_calls_llm():
 def test_multiple_chunks_sorted_by_score():
     """Referensi harus urut dari skor tertinggi."""
     chunks = [
-        _make_chunk(score=0.90, surah="Al-Ikhlas", ayat=1),
-        _make_chunk(score=0.75, surah="Al-Falaq", ayat=1),
-        _make_chunk(score=0.60, surah="An-Nas", ayat=1),
+        _make_chunk(score=0.90, surah="Al-Ikhlas", ayat=1, surah_num=112),
+        _make_chunk(score=0.75, surah="Al-Falaq", ayat=1, surah_num=113),
+        _make_chunk(score=0.60, surah="An-Nas", ayat=1, surah_num=114),
     ]
     rag = _make_rag_service(chunks=chunks)
     result = rag.answer("Apa itu tauhid?")

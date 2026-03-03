@@ -2,13 +2,16 @@
 # alur kerjanya: terima pertanyaan, cari ayat yang relevan di qdrant,
 # cek apakah skor cukup tinggi, kalau iya rakit konteks dan panggil llm.
 # kalau skor rendah, langsung tolak halus tanpa panggil llm.
+#
+# v2: konteks yang dikirim ke LLM sekarang termasuk teks arab, transliterasi,
+# dan tafsir tahlili supaya LLM bisa menyajikan jawaban yang lebih kaya.
+# deduplikasi chunk dari ayat yang sama juga ditangani di sini.
 
 import logging
-from dataclasses import dataclass
 
 from app.config import Settings
 from app.models.schemas import ReferensiItem, QueryResponse
-from app.services.embedding_service import EmbeddingService
+from app.services.embedding_service import EmbeddingService, RetrievedChunk
 from app.services.llm_service import LLMService
 
 logger = logging.getLogger(__name__)
@@ -22,6 +25,17 @@ LOW_RELEVANCE_MESSAGE = (
     "dengan pertanyaan Anda. Silakan coba ajukan pertanyaan dengan kata kunci "
     "yang lebih spesifik terkait tema dalam Al-Qur'an."
 )
+
+
+def _deduplicate_chunks(chunks: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """Deduplikasi chunk dari ayat yang sama (akibat tafsir splitting).
+    Hanya pertahankan chunk dengan skor tertinggi per ayat."""
+    seen: dict[str, RetrievedChunk] = {}
+    for chunk in chunks:
+        key = f"{chunk.surah}-{chunk.ayat}"
+        if key not in seen or chunk.score > seen[key].score:
+            seen[key] = chunk
+    return list(seen.values())
 
 
 class RAGService:
@@ -40,7 +54,7 @@ class RAGService:
     def answer(
         self,
         pertanyaan: str,
-        top_k: int = 3,
+        top_k: int = 5,
         riwayat_percakapan: list | None = None,
     ) -> QueryResponse:
         """Jalankan seluruh pipeline rag untuk satu pertanyaan.
@@ -48,9 +62,12 @@ class RAGService:
         konteks percakapan sebelumnya."""
 
         # cari ayat yang relevan lewat similarity search
-        chunks = self._embedding.retrieve(query=pertanyaan, top_k=top_k)
+        # ambil lebih banyak (top_k+2) untuk mengompensasi deduplikasi chunk
+        raw_chunks = self._embedding.retrieve(
+            query=pertanyaan, top_k=min(top_k + 2, 10)
+        )
 
-        if not chunks:
+        if not raw_chunks:
             logger.info("Retrieval menghasilkan 0 chunk untuk: '%s'", pertanyaan)
             return QueryResponse(
                 status="success",
@@ -59,6 +76,11 @@ class RAGService:
                 referensi=[],
                 skor_tertinggi=0.0,
             )
+
+        # deduplikasi chunk dari ayat yang sama, ambil yang skor tertinggi
+        chunks = _deduplicate_chunks(raw_chunks)
+        chunks.sort(key=lambda c: c.score, reverse=True)
+        chunks = chunks[:top_k]  # potong sesuai jumlah yang diminta
 
         # chunks sudah diurutkan descending, ambil skor tertinggi
         skor_tertinggi = chunks[0].score
@@ -78,6 +100,7 @@ class RAGService:
                     ayat=c.ayat,
                     teks_arab=c.teks_arab,
                     terjemahan=c.terjemahan,
+                    transliterasi=c.transliterasi,
                 )
                 for c in chunks
             ]
@@ -89,15 +112,20 @@ class RAGService:
                 skor_tertinggi=round(skor_tertinggi, 4),
             )
 
-        # rakit konteks dari chunk-chunk yang relevan untuk dikirim ke llm
+        # rakit konteks KAYA dari chunk-chunk yang relevan untuk dikirim ke llm
+        # sertakan semua metadata supaya LLM bisa menenun jawaban yang lengkap
         konteks_parts: list[str] = []
         referensi: list[ReferensiItem] = []
 
         for chunk in chunks:
+            # konteks lengkap untuk LLM — termasuk teks arab dan transliterasi
             konteks_parts.append(
-                f"Surah {chunk.nama_surah} Ayat {chunk.ayat}:\n"
+                f"--- Surah {chunk.nama_surah} Ayat {chunk.ayat} ---\n"
+                f"Teks Arab: {chunk.teks_arab}\n"
+                f"Transliterasi: {chunk.transliterasi}\n"
                 f"Terjemahan: {chunk.terjemahan}\n"
-                f"Tafsir: {chunk.tafsir_wajiz}"
+                f"Tafsir Ringkas: {chunk.tafsir_wajiz}\n"
+                f"Tafsir Tahlili: {chunk.tafsir_tahlili}"
             )
             referensi.append(
                 ReferensiItem(
@@ -106,6 +134,7 @@ class RAGService:
                     ayat=chunk.ayat,
                     teks_arab=chunk.teks_arab,
                     terjemahan=chunk.terjemahan,
+                    transliterasi=chunk.transliterasi,
                 )
             )
 

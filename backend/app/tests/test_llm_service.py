@@ -94,7 +94,7 @@ def test_history_prompt_used_when_riwayat_given(mock_chat_class):
     assert result == "Jawaban dengan riwayat."
     # verifikasi prompt yang dikirim mengandung riwayat
     call_args = mock_primary.invoke.call_args[0][0]
-    assert "Riwayat Percakapan" in call_args
+    assert "RIWAYAT PERCAKAPAN" in call_args.upper()
     assert "pertanyaan lanjutan" in call_args
 
 
@@ -111,5 +111,5 @@ def test_single_turn_prompt_when_no_riwayat(mock_chat_class):
     result = service.generate(konteks="konteks ayat", pertanyaan="pertanyaan baru")
 
     call_args = mock_primary.invoke.call_args[0][0]
-    assert "Riwayat Percakapan" not in call_args
+    assert "RIWAYAT PERCAKAPAN" not in call_args.upper()
     assert "pertanyaan baru" in call_args

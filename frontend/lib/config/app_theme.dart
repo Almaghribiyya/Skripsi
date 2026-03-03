@@ -1,34 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// palet warna yang dipakai di seluruh aplikasi
+/// Palet warna utama:
+/// - Charcoal: background utama & teks
+/// - Emerald Green: aksen & bubble user
+/// - Sage Green: bubble AI & elemen sekunder
 abstract final class AppColors {
-  // Primary
-  static const Color primary = Color(0xFF10B77F);
-  static const Color primaryLight = Color(0xFF34D399); // emerald-400
-  static const Color primaryDark = Color(0xFF059669); // emerald-600
+  // ─── Emerald Green (aksen utama) ──────────────────────────────
+  static const Color primary = Color(0xFF10B981);         // emerald-500
+  static const Color primaryLight = Color(0xFF34D399);    // emerald-400
+  static const Color primaryDark = Color(0xFF059669);     // emerald-600
 
-  // Backgrounds
+  // ─── Charcoal (background utama) ─────────────────────────────
   static const Color backgroundLight = Color(0xFFF6F8F7);
-  static const Color backgroundDark = Color(0xFF10221C);
+  static const Color backgroundDark = Color(0xFF1A1A2E);  // charcoal deep
+  static const Color surfaceDark = Color(0xFF16213E);      // charcoal surface
 
-  // Surfaces
-  static const Color surfaceDark = Color(0xFF162E26);
+  // ─── Text ─────────────────────────────────────────────────────
+  static const Color textDark = Color(0xFF0F172A);
+  static const Color textLight = Color(0xFFF1F5F9);
+  static const Color textMuted = Color(0xFF64748B);
+  static const Color textMutedDark = Color(0xFF94A3B8);
 
-  // Text
-  static const Color textDark = Color(0xFF0F172A); // slate-900
-  static const Color textLight = Color(0xFFF1F5F9); // slate-100
-  static const Color textMuted = Color(0xFF64748B); // slate-500
-  static const Color textMutedDark = Color(0xFF94A3B8); // slate-400
+  // ─── Border ───────────────────────────────────────────────────
+  static const Color borderDark = Color(0xFF334155);
+  static const Color borderLight = Color(0xFFCBD5E1);
 
-  // Borders
-  static const Color borderDark = Color(0xFF334155); // slate-700
-  static const Color borderLight = Color(0xFFCBD5E1); // slate-300
-
-  // Chat-specific
-  static const Color chatBg = Color(0xFF11221C);
-  static const Color bubbleAi = Color(0xFF23483C);
-  static const Color inputSurface = Color(0xFF1A332B);
+  // ─── Chat-specific ────────────────────────────────────────────
+  static const Color chatBg = Color(0xFF1A1A2E);           // charcoal
+  static const Color bubbleAi = Color(0xFF2D4A3E);         // sage green gelap
+  static const Color bubbleUser = Color(0xFF065F46);       // emerald-800
+  static const Color inputSurface = Color(0xFF1E2D4A);
   static const Color gray200 = Color(0xFFE5E7EB);
   static const Color gray400 = Color(0xFF9CA3AF);
   static const Color gray500 = Color(0xFF6B7280);
@@ -36,8 +38,12 @@ abstract final class AppColors {
   static const Color gray700 = Color(0xFF374151);
   static const Color gray800 = Color(0xFF1F2937);
 
-  // Drawer-specific (from HTML surface-dark: #172d25)
-  static const Color drawerSurface = Color(0xFF172D25);
+  // ─── Sage Green (secondaries) ─────────────────────────────────
+  static const Color sageLight = Color(0xFF87AE9E);
+  static const Color sageMuted = Color(0xFF5C8A75);
+
+  // ─── Drawer ───────────────────────────────────────────────────
+  static const Color drawerSurface = Color(0xFF16213E);
   static const Color slate100 = Color(0xFFF1F5F9);
   static const Color slate200 = Color(0xFFE2E8F0);
   static const Color slate300 = Color(0xFFCBD5E1);
@@ -45,7 +51,7 @@ abstract final class AppColors {
   static const Color slate500 = Color(0xFF64748B);
   static const Color slate700 = Color(0xFF334155);
   static const Color slate900 = Color(0xFF0F172A);
-  static const Color scrollThumb = Color(0xFF23483C);
+  static const Color scrollThumb = Color(0xFF2D4A3E);
 }
 
 // konfigurasi tema aplikasi untuk mode terang dan gelap
