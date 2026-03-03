@@ -7,9 +7,6 @@ import uuid
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# ─── daftar surah yang harus di-skip karena metadata tidak lengkap ────
-EXCLUDED_SURAHS = {7, 17, 26}
-
 # field minimal yang WAJIB ada dan tidak boleh kosong di setiap entry
 REQUIRED_FIELDS = [
     "surah", "ayat", "nama_surah", "teks_arab",
@@ -72,17 +69,9 @@ def build_documents(dataset: list[dict]) -> list[dict]:
     - point_id: UUID deterministik untuk upsert aman
     """
     documents = []
-    skipped_surah = 0
     skipped_incomplete = 0
 
     for item in dataset:
-        surah_num = item.get("surah")
-
-        # skip surah yang diketahui bermasalah
-        if surah_num in EXCLUDED_SURAHS:
-            skipped_surah += 1
-            continue
-
         # skip entry dengan data tidak lengkap
         if not is_valid_entry(item):
             skipped_incomplete += 1
@@ -149,7 +138,6 @@ def build_documents(dataset: list[dict]) -> list[dict]:
             })
 
     print(f"  Data cleansing report:")
-    print(f"    - Skipped (surah {EXCLUDED_SURAHS}): {skipped_surah} entries")
     print(f"    - Skipped (incomplete data): {skipped_incomplete} entries")
     print(f"    - Total dokumen setelah chunking: {len(documents)}")
 
