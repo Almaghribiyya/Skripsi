@@ -1,8 +1,9 @@
 # test untuk RAGService, logika inti pipeline rag.
-# semua test ini murni unit test, tidak butuh Qdrant, LLM,
+# semua test ini murni unit test async, tidak butuh Qdrant, LLM,
 # atau koneksi jaringan apapun.
 
-from unittest.mock import MagicMock
+import pytest
+from unittest.mock import MagicMock, AsyncMock
 
 from app.config import Settings
 from app.models.schemas import QueryResponse
@@ -11,7 +12,9 @@ from app.services.llm_service import LLMService, FALLBACK_MESSAGE
 from app.services.rag_service import RAGService, NO_DATA_MESSAGE, LOW_RELEVANCE_MESSAGE
 
 
-def _make_chunk(score: float, surah: str = "Al-Fatihah", ayat: int = 1, surah_num: int = 1) -> RetrievedChunk:
+def _make_chunk(
+    score: float, surah: str = "Al-Fatihah", ayat: int = 1, surah_num: int = 1,
+) -> RetrievedChunk:
     """Bikin RetrievedChunk dummy untuk testing."""
     return RetrievedChunk(
         score=score,
@@ -34,12 +37,12 @@ def _make_rag_service(
     llm_answer: str = "Jawaban dari LLM.",
     threshold: float = 0.45,
 ) -> RAGService:
-    """Bikin RAGService dengan mock dependencies."""
+    """Bikin RAGService dengan mock async dependencies."""
     mock_embedding = MagicMock(spec=EmbeddingService)
-    mock_embedding.retrieve.return_value = chunks
+    mock_embedding.retrieve = AsyncMock(return_value=chunks)
 
     mock_llm = MagicMock(spec=LLMService)
-    mock_llm.generate.return_value = llm_answer
+    mock_llm.generate = AsyncMock(return_value=llm_answer)
 
     settings = MagicMock(spec=Settings)
     settings.similarity_threshold = threshold
@@ -51,10 +54,11 @@ def _make_rag_service(
     )
 
 
-def test_no_chunks_returns_no_data_message():
+@pytest.mark.asyncio
+async def test_no_chunks_returns_no_data_message():
     """Retrieval 0 chunk harus kembalikan pesan no-data."""
     rag = _make_rag_service(chunks=[])
-    result = rag.answer("Apa itu iman?")
+    result = await rag.answer("Apa itu iman?")
 
     assert result.status == "success"
     assert result.jawaban_llm == NO_DATA_MESSAGE
@@ -62,22 +66,24 @@ def test_no_chunks_returns_no_data_message():
     assert result.skor_tertinggi == 0.0
 
 
-def test_low_score_triggers_negative_rejection():
+@pytest.mark.asyncio
+async def test_low_score_triggers_negative_rejection():
     """Skor tertinggi di bawah threshold harus trigger negative rejection."""
     low_score_chunks = [_make_chunk(score=0.30)]
     rag = _make_rag_service(chunks=low_score_chunks, threshold=0.45)
-    result = rag.answer("Pertanyaan tidak relevan?")
+    result = await rag.answer("Pertanyaan tidak relevan?")
 
     assert result.jawaban_llm == LOW_RELEVANCE_MESSAGE
     assert result.skor_tertinggi == 0.30
     assert len(result.referensi) == 1  # referensi tetap dikembalikan
 
 
-def test_high_score_calls_llm():
+@pytest.mark.asyncio
+async def test_high_score_calls_llm():
     """Skor di atas threshold harus panggil LLM."""
     chunks = [_make_chunk(score=0.85, surah="Al-Baqarah", ayat=255)]
     rag = _make_rag_service(chunks=chunks, llm_answer="Ayat Kursi menjelaskan...")
-    result = rag.answer("Apa itu Ayat Kursi?")
+    result = await rag.answer("Apa itu Ayat Kursi?")
 
     assert result.jawaban_llm == "Ayat Kursi menjelaskan..."
     assert result.skor_tertinggi == 0.85
@@ -86,7 +92,8 @@ def test_high_score_calls_llm():
     assert result.referensi[0].ayat == 255
 
 
-def test_multiple_chunks_sorted_by_score():
+@pytest.mark.asyncio
+async def test_multiple_chunks_sorted_by_score():
     """Referensi harus urut dari skor tertinggi."""
     chunks = [
         _make_chunk(score=0.90, surah="Al-Ikhlas", ayat=1, surah_num=112),
@@ -94,27 +101,29 @@ def test_multiple_chunks_sorted_by_score():
         _make_chunk(score=0.60, surah="An-Nas", ayat=1, surah_num=114),
     ]
     rag = _make_rag_service(chunks=chunks)
-    result = rag.answer("Apa itu tauhid?")
+    result = await rag.answer("Apa itu tauhid?")
 
     assert len(result.referensi) == 3
     scores = [r.skor_kemiripan for r in result.referensi]
     assert scores == sorted(scores, reverse=True)
 
 
-def test_exact_threshold_passes():
+@pytest.mark.asyncio
+async def test_exact_threshold_passes():
     """Skor yang tepat sama dengan threshold harus lolos gate."""
     chunks = [_make_chunk(score=0.45)]
     rag = _make_rag_service(chunks=chunks, threshold=0.45)
-    result = rag.answer("Pertanyaan pas threshold?")
+    result = await rag.answer("Pertanyaan pas threshold?")
 
     assert result.jawaban_llm != LOW_RELEVANCE_MESSAGE
 
 
-def test_response_schema_completeness():
+@pytest.mark.asyncio
+async def test_response_schema_completeness():
     """Response harus punya semua field yang diperlukan."""
     chunks = [_make_chunk(score=0.80)]
     rag = _make_rag_service(chunks=chunks)
-    result = rag.answer("Test schema?")
+    result = await rag.answer("Test schema?")
 
     assert hasattr(result, "status")
     assert hasattr(result, "pertanyaan")

@@ -2,7 +2,7 @@
 # pastikan endpoint menerima dan meneruskan riwayat ke rag_service.
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from app.models.schemas import QueryResponse
@@ -14,13 +14,13 @@ from app.tests.conftest import get_test_settings
 def _riwayat_client():
     """TestClient terpisah supaya tidak kena rate limit dari test lain."""
     mock_rag = MagicMock(spec=RAGService)
-    mock_rag.answer.return_value = QueryResponse(
+    mock_rag.answer = AsyncMock(return_value=QueryResponse(
         status="success",
         pertanyaan="Test",
         jawaban_llm="Jawaban",
         referensi=[],
         skor_tertinggi=0.85,
-    )
+    ))
 
     with patch("app.main.init_services"):
         from app.main import app

@@ -1,13 +1,12 @@
-# service untuk memanggil llm google gemini dengan mekanisme fallback.
+# service untuk memanggil llm google gemini secara async.
 # kalau primary model gagal, coba fallback model.
-# kalau dua-duanya gagal, kembalikan pesan statis dan biarkan user
-# tetap dapat referensi ayat tanpa analisis ai.
+# mendukung dua mode: generate (langsung) dan stream (token-by-token).
 #
-# v2: prompt template yang lebih ketat untuk grounded generation.
-# LLM wajib menenun metadata (teks arab, nama surah, ayat) secara natural
-# ke dalam jawaban, tanpa menampilkan skor similarity.
+# prompt template ketat untuk grounded generation — LLM wajib menenun
+# metadata (teks arab, nama surah, ayat) secara natural ke dalam jawaban.
 
 import logging
+from collections.abc import AsyncGenerator
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
@@ -98,56 +97,77 @@ FALLBACK_MESSAGE = (
 
 
 class LLMService:
-    """Panggilan LLM dengan fallback bertingkat: primary, fallback, statis."""
+    """Panggilan LLM async dengan fallback bertingkat dan streaming."""
 
     def __init__(self, settings: Settings) -> None:
-        self._settings = settings
-
-        # model utama, biasanya gemini versi terbaru
         self._primary = ChatGoogleGenerativeAI(
             model=settings.llm_primary_model,
             google_api_key=settings.gemini_api_key,
             temperature=settings.llm_temperature,
         )
-        logger.info("LLM Primary initialized: %s", settings.llm_primary_model)
+        logger.info("LLM Primary: %s", settings.llm_primary_model)
 
-        # model cadangan, dipakai kalau primary gagal
         self._fallback = ChatGoogleGenerativeAI(
             model=settings.llm_fallback_model,
             google_api_key=settings.gemini_api_key,
             temperature=settings.llm_temperature,
         )
-        logger.info("LLM Fallback initialized: %s", settings.llm_fallback_model)
+        logger.info("LLM Fallback: %s", settings.llm_fallback_model)
 
-    def generate(
-        self, konteks: str, pertanyaan: str, riwayat: str = ""
-    ) -> str:
-        """Panggil llm untuk generate jawaban, dengan fallback chain.
-        Jika riwayat diberikan, gunakan prompt multi-turn."""
+    def _format_prompt(self, konteks: str, pertanyaan: str, riwayat: str = "") -> str:
+        """Format prompt sesuai mode single-turn atau multi-turn."""
         if riwayat:
-            prompt_text = QURAN_QA_PROMPT_WITH_HISTORY.format(
+            return QURAN_QA_PROMPT_WITH_HISTORY.format(
                 konteks=konteks, pertanyaan=pertanyaan, riwayat=riwayat
             )
-        else:
-            prompt_text = QURAN_QA_PROMPT.format(
-                konteks=konteks, pertanyaan=pertanyaan
-            )
+        return QURAN_QA_PROMPT.format(konteks=konteks, pertanyaan=pertanyaan)
 
-        # coba dulu pakai primary model
+    async def generate(self, konteks: str, pertanyaan: str, riwayat: str = "") -> str:
+        """Panggil LLM async dengan fallback chain."""
+        prompt_text = self._format_prompt(konteks, pertanyaan, riwayat)
+
         try:
-            response = self._primary.invoke(prompt_text)
+            response = await self._primary.ainvoke(prompt_text)
             logger.info("LLM Primary berhasil menjawab.")
             return response.content
         except Exception as e:
             logger.warning("LLM Primary gagal: %s. Mencoba fallback...", str(e))
 
-        # primary gagal, coba fallback model
         try:
-            response = self._fallback.invoke(prompt_text)
+            response = await self._fallback.ainvoke(prompt_text)
             logger.info("LLM Fallback berhasil menjawab.")
             return response.content
         except Exception as e:
-            logger.error("LLM Fallback juga gagal: %s. Menggunakan mode retrieval-only.", str(e))
+            logger.error("LLM Fallback juga gagal: %s", str(e))
 
-        # semua llm gagal, kembalikan pesan statis
         return FALLBACK_MESSAGE
+
+    async def stream(
+        self, konteks: str, pertanyaan: str, riwayat: str = ""
+    ) -> AsyncGenerator[str, None]:
+        """Stream token LLM satu per satu dengan fallback.
+
+        Jika primary gagal sebelum menghasilkan token apapun,
+        otomatis coba fallback. Jika gagal mid-stream, berhenti."""
+        prompt_text = self._format_prompt(konteks, pertanyaan, riwayat)
+        yielded_any = False
+
+        try:
+            async for chunk in self._primary.astream(prompt_text):
+                if chunk.content:
+                    yielded_any = True
+                    yield chunk.content
+            return
+        except Exception as e:
+            if yielded_any:
+                logger.error("Primary stream gagal mid-response: %s", e)
+                return
+            logger.warning("Primary stream gagal: %s. Mencoba fallback...", e)
+
+        try:
+            async for chunk in self._fallback.astream(prompt_text):
+                if chunk.content:
+                    yield chunk.content
+        except Exception as e:
+            logger.error("Fallback stream juga gagal: %s", e)
+            yield FALLBACK_MESSAGE

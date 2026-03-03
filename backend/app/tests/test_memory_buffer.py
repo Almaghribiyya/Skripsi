@@ -2,7 +2,8 @@
 # verifikasi bahwa riwayat_percakapan diformat dengan benar
 # dan dikirim ke LLM sebagai konteks memori.
 
-from unittest.mock import MagicMock
+import pytest
+from unittest.mock import MagicMock, AsyncMock
 
 from app.config import Settings
 from app.models.schemas import RiwayatItem
@@ -30,10 +31,10 @@ def _make_chunk(score=0.85):
 
 def _make_service(llm_answer="Jawaban"):
     mock_embedding = MagicMock(spec=EmbeddingService)
-    mock_embedding.retrieve.return_value = [_make_chunk()]
+    mock_embedding.retrieve = AsyncMock(return_value=[_make_chunk()])
 
     mock_llm = MagicMock(spec=LLMService)
-    mock_llm.generate.return_value = llm_answer
+    mock_llm.generate = AsyncMock(return_value=llm_answer)
 
     settings = MagicMock(spec=Settings)
     settings.similarity_threshold = 0.45
@@ -45,7 +46,8 @@ def _make_service(llm_answer="Jawaban"):
     ), mock_llm
 
 
-def test_riwayat_passed_to_llm():
+@pytest.mark.asyncio
+async def test_riwayat_passed_to_llm():
     """Riwayat percakapan harus sampai ke LLM.generate() sebagai teks."""
     rag, mock_llm = _make_service()
     riwayat = [
@@ -53,32 +55,33 @@ def test_riwayat_passed_to_llm():
         RiwayatItem(peran="ai", konten="Sabar adalah menahan diri..."),
     ]
 
-    rag.answer("Jelaskan lebih lanjut", riwayat_percakapan=riwayat)
+    await rag.answer("Jelaskan lebih lanjut", riwayat_percakapan=riwayat)
 
-    # verifikasi LLM dipanggil dengan riwayat
     call_kwargs = mock_llm.generate.call_args
     riwayat_text = call_kwargs.kwargs.get("riwayat") or call_kwargs[1].get("riwayat", "")
     assert "Pengguna: Apa itu sabar?" in riwayat_text
     assert "Asisten: Sabar adalah menahan diri..." in riwayat_text
 
 
-def test_no_riwayat_sends_empty_string():
+@pytest.mark.asyncio
+async def test_no_riwayat_sends_empty_string():
     """Tanpa riwayat, LLM harus dapat string kosong."""
     rag, mock_llm = _make_service()
-    rag.answer("Apa itu iman?")
+    await rag.answer("Apa itu iman?")
 
     call_kwargs = mock_llm.generate.call_args
     riwayat_text = call_kwargs.kwargs.get("riwayat") or call_kwargs[1].get("riwayat", "")
     assert riwayat_text == ""
 
 
-def test_riwayat_truncated_to_500_chars():
+@pytest.mark.asyncio
+async def test_riwayat_truncated_to_500_chars():
     """Konten riwayat yang terlalu panjang harus dipotong 500 karakter."""
     rag, mock_llm = _make_service()
     long_text = "A" * 1000
     riwayat = [RiwayatItem(peran="user", konten=long_text)]
 
-    rag.answer("Lanjutkan", riwayat_percakapan=riwayat)
+    await rag.answer("Lanjutkan", riwayat_percakapan=riwayat)
 
     call_kwargs = mock_llm.generate.call_args
     riwayat_text = call_kwargs.kwargs.get("riwayat") or call_kwargs[1].get("riwayat", "")
@@ -86,17 +89,19 @@ def test_riwayat_truncated_to_500_chars():
     assert len(riwayat_text) < 1000
 
 
-def test_empty_riwayat_list_treated_as_none():
+@pytest.mark.asyncio
+async def test_empty_riwayat_list_treated_as_none():
     """List riwayat kosong harus sama hasilnya dengan None."""
     rag, mock_llm = _make_service()
-    rag.answer("Apa itu taqwa?", riwayat_percakapan=[])
+    await rag.answer("Apa itu taqwa?", riwayat_percakapan=[])
 
     call_kwargs = mock_llm.generate.call_args
     riwayat_text = call_kwargs.kwargs.get("riwayat") or call_kwargs[1].get("riwayat", "")
     assert riwayat_text == ""
 
 
-def test_riwayat_with_multiple_turns():
+@pytest.mark.asyncio
+async def test_riwayat_with_multiple_turns():
     """Riwayat multi-turn harus diformat berurutan."""
     rag, mock_llm = _make_service()
     riwayat = [
@@ -106,7 +111,7 @@ def test_riwayat_with_multiple_turns():
         RiwayatItem(peran="ai", konten="Jawaban kedua"),
     ]
 
-    rag.answer("Pertanyaan ketiga", riwayat_percakapan=riwayat)
+    await rag.answer("Pertanyaan ketiga", riwayat_percakapan=riwayat)
 
     call_kwargs = mock_llm.generate.call_args
     riwayat_text = call_kwargs.kwargs.get("riwayat") or call_kwargs[1].get("riwayat", "")

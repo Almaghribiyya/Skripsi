@@ -1,13 +1,13 @@
 # service untuk mengelola model embedding dan operasi retrieval
-# ke qdrant vector store. retrieve() mengembalikan data terstruktur
-# supaya layer di atasnya tidak perlu tahu detail langchain.
+# ke qdrant vector store. retrieve() async untuk tidak memblokir
+# event loop FastAPI saat melakukan similarity search.
 
 import logging
 from dataclasses import dataclass
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient, models
+from qdrant_client import QdrantClient, AsyncQdrantClient, models
 
 from app.config import Settings
 
@@ -33,49 +33,47 @@ class RetrievedChunk:
 
 
 class EmbeddingService:
-    """Koneksi ke Qdrant dan operasi similarity search."""
+    """Koneksi ke Qdrant dan operasi async similarity search."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-        # inisialisasi model embedding huggingface dengan normalisasi
         self._embeddings = HuggingFaceEmbeddings(
             model_name=settings.embedding_model,
             model_kwargs={"device": settings.embedding_device},
             encode_kwargs={"normalize_embeddings": True},
         )
 
-        # setup koneksi ke qdrant dan vector store langchain
+        # klien sync untuk health check
         self._qdrant_client = QdrantClient(url=settings.qdrant_url)
+        # klien async untuk retrieval tanpa blokir event loop
+        self._async_client = AsyncQdrantClient(url=settings.qdrant_url)
+
         self._vector_store = QdrantVectorStore(
             client=self._qdrant_client,
+            async_client=self._async_client,
             collection_name=settings.qdrant_collection,
             embedding=self._embeddings,
         )
         logger.info(
-            "EmbeddingService initialized: model=%s, qdrant=%s, collection=%s",
+            "EmbeddingService initialized (async): model=%s, qdrant=%s",
             settings.embedding_model,
             settings.qdrant_url,
-            settings.qdrant_collection,
         )
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
-        """Cari ayat yang paling mirip dengan pertanyaan user.
+    async def retrieve(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
+        """Cari ayat yang paling mirip secara async.
 
-        Menggunakan HNSW ef=128 saat search untuk memaksimalkan recall
+        Menggunakan HNSW ef=128 untuk memaksimalkan recall
         tanpa mengorbankan kecepatan secara signifikan.
         """
         # prefix "query: " wajib untuk model e5 agar similarity search optimal
         prefixed_query = f"query: {query}"
 
-        # search_params: ef tinggi untuk meningkatkan recall pada HNSW
-        raw_results = self._vector_store.similarity_search_with_score(
+        raw_results = await self._vector_store.asimilarity_search_with_score(
             query=prefixed_query,
             k=top_k,
-            search_params=models.SearchParams(
-                hnsw_ef=128,
-                exact=False,
-            ),
+            search_params=models.SearchParams(hnsw_ef=128, exact=False),
         )
 
         chunks: list[RetrievedChunk] = []
@@ -98,12 +96,11 @@ class EmbeddingService:
                 )
             )
 
-        # urutkan dari skor cosine similarity tertinggi ke terendah
         chunks.sort(key=lambda c: c.score, reverse=True)
         return chunks
 
     def health_check(self) -> bool:
-        """Cek apakah Qdrant bisa dihubungi."""
+        """Cek apakah Qdrant bisa dihubungi (sync untuk probe sederhana)."""
         try:
             self._qdrant_client.get_collections()
             return True

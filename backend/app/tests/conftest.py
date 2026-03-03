@@ -3,7 +3,7 @@
 # supaya test bisa jalan tanpa qdrant, llm, atau firebase.
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from app.config import Settings
@@ -41,13 +41,13 @@ def get_test_settings() -> Settings:
 def mock_rag_service():
     """RAGService palsu, tidak butuh Qdrant atau LLM aktif."""
     service = MagicMock(spec=RAGService)
-    service.answer.return_value = QueryResponse(
+    service.answer = AsyncMock(return_value=QueryResponse(
         status="success",
         pertanyaan="Apa itu hari pembalasan?",
         jawaban_llm="Hari pembalasan adalah hari kiamat...",
         referensi=[],
         skor_tertinggi=0.85,
-    )
+    ))
     return service
 
 
