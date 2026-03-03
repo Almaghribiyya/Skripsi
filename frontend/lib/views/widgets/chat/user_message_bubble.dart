@@ -13,6 +13,7 @@ class UserMessageBubble extends StatelessWidget {
     this.avatarUrl,
     this.isLastUserMessage = false,
     this.onEdit,
+    this.onDelete,
   });
 
   final String text;
@@ -25,6 +26,9 @@ class UserMessageBubble extends StatelessWidget {
   // callback saat tombol edit ditekan (hanya muncul di pesan terakhir)
   final VoidCallback? onEdit;
 
+  // callback saat tombol hapus ditekan
+  final VoidCallback? onDelete;
+
   String get _timeLabel {
     final h = timestamp.hour.toString().padLeft(2, '0');
     final m = timestamp.minute.toString().padLeft(2, '0');
@@ -35,7 +39,7 @@ class UserMessageBubble extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Prompt berhasil disalin'),
+        content: Text('Berhasil disalin'),
         duration: Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
       ),
@@ -73,7 +77,7 @@ class UserMessageBubble extends StatelessWidget {
                       color: isDark ? AppColors.gray600 : AppColors.gray200,
                     ),
                   ),
-                  child: Text(
+                  child: SelectableText(
                     text,
                     style: GoogleFonts.inter(
                       fontSize: 16,
@@ -114,6 +118,16 @@ class UserMessageBubble extends StatelessWidget {
                           tooltip: 'Edit',
                           isDark: isDark,
                           onTap: onEdit!,
+                        ),
+                      ],
+                      // tombol hapus
+                      if (onDelete != null) ...[
+                        const SizedBox(width: 4),
+                        _SmallActionButton(
+                          icon: Icons.delete_outline,
+                          tooltip: 'Hapus',
+                          isDark: isDark,
+                          onTap: onDelete!,
                         ),
                       ],
                     ],

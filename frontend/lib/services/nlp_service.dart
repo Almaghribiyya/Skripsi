@@ -28,11 +28,17 @@ class NlpCancelledException implements Exception {
 // timeout supaya ui tidak freeze, dan error handling per status code.
 class NlpService {
   final String baseUrl;
+  final Future<String?> Function()? _authTokenProvider;
 
-  NlpService({String? baseUrl}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
+  NlpService({String? baseUrl, Future<String?> Function()? authTokenProvider})
+      : baseUrl = baseUrl ?? ApiConfig.baseUrl,
+        _authTokenProvider = authTokenProvider;
 
-  // ambil firebase id token dari user yang sedang login
+  // ambil firebase id token dari user yang sedang login.
+  // kalau authTokenProvider disediakan (misalnya untuk testing),
+  // pakai itu. kalau tidak, ambil dari FirebaseAuth langsung.
   Future<String?> _getAuthToken() async {
+    if (_authTokenProvider != null) return _authTokenProvider!();
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
     return await user.getIdToken();
@@ -40,10 +46,12 @@ class NlpService {
 
   // kirim pertanyaan ke backend dan terima jawaban rag.
   // bisa terima client opsional untuk mendukung pembatalan request.
+  // chatHistory berisi riwayat percakapan untuk memory buffer.
   Future<Map<String, dynamic>> getAnswerFromVectorDB(
     String query, {
     int topK = 3,
     http.Client? client,
+    List<Map<String, String>>? chatHistory,
   }) async {
     final url = Uri.parse('${baseUrl}/api/ask');
     final effectiveClient = client ?? http.Client();
@@ -58,10 +66,19 @@ class NlpService {
       headers['Authorization'] = 'Bearer $token';
     }
 
-    final body = json.encode({
+    final bodyMap = <String, dynamic>{
       'pertanyaan': query,
       'top_k': topK,
-    });
+    };
+
+    // tambahkan riwayat percakapan jika ada
+    if (chatHistory != null && chatHistory.isNotEmpty) {
+      bodyMap['riwayat_percakapan'] = chatHistory
+          .map((m) => {'peran': m['peran'], 'konten': m['konten']})
+          .toList();
+    }
+
+    final body = json.encode(bodyMap);
 
     // ulangi request kalau gagal karena jaringan
     http.Response? response;

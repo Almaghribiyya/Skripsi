@@ -45,7 +45,7 @@ def test_ask_default_top_k_is_3(test_client, mock_rag_service):
     assert response.status_code == 200
     # pastikan rag_service.answer dipanggil dengan top_k=3
     mock_rag_service.answer.assert_called_once_with(
-        pertanyaan="Apa itu taqwa?", top_k=3
+        pertanyaan="Apa itu taqwa?", top_k=3, riwayat_percakapan=None
     )
 
 

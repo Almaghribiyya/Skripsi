@@ -19,10 +19,10 @@ abstract final class ApiConfig {
   static const String _webDevUrl = 'http://localhost:8000';
 
   // url development untuk mobile (sesuaikan ip lokal)
-  static const String _mobileDevUrl = 'http://192.168.0.110:8000';
+  static const String _mobileDevUrl = 'http://192.168.0.105:8000';
 
-  // ignore: unused_field
   // url production (ganti saat deployment)
+  // ignore: unused_field
   static const String _productionUrl = 'http://192.168.0.110:8000';
 
   // base url dipilih otomatis berdasarkan platform

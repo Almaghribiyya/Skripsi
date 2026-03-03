@@ -79,6 +79,8 @@ class _ChatViewState extends State<ChatView> {
                     final messages = vm.currentChat;
                     return ListView.builder(
                       controller: vm.scrollController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.only(
                         left: 16,
                         right: 16,
@@ -95,19 +97,34 @@ class _ChatViewState extends State<ChatView> {
                         }
                         final msg = messages[index];
                         if (msg.sender == MessageSender.user) {
-                          // Cari apakah ini pesan user terakhir
+                          // hanya pesan user terakhir yang bisa diedit
+                          // (seperti ChatGPT/Gemini mobile)
                           final isLast = _isLastUserMessage(messages, index);
                           return UserMessageBubble(
                             text: msg.text,
                             timestamp: msg.timestamp,
                             avatarUrl: user?.photoURL,
                             isLastUserMessage: isLast,
-                            onEdit: isLast
-                                ? () => vm.editLastUserMessage()
+                            onEdit: (isLast && !vm.isLoading)
+                                ? () => vm.editUserMessage(index)
                                 : null,
+                            onDelete: vm.isLoading
+                                ? null
+                                : () => vm.deleteMessage(index),
                           );
                         }
-                        return AiMessageBubble(message: msg);
+                        // cek apakah ini pesan AI terakhir
+                        final isLastAi = _isLastAiMessage(messages, index);
+                        return AiMessageBubble(
+                          message: msg,
+                          isLastAiMessage: isLastAi,
+                          onRegenerate: (isLastAi && !vm.isLoading)
+                              ? () => vm.regenerateLastResponse()
+                              : null,
+                          onDelete: vm.isLoading
+                              ? null
+                              : () => vm.deleteMessage(index),
+                        );
                       },
                     );
                   },
@@ -131,6 +148,16 @@ class _ChatViewState extends State<ChatView> {
   bool _isLastUserMessage(List<MessageModel> messages, int index) {
     for (int i = messages.length - 1; i >= 0; i--) {
       if (messages[i].sender == MessageSender.user) {
+        return i == index;
+      }
+    }
+    return false;
+  }
+
+  // cek apakah pesan pada index ini adalah ai message terakhir di list
+  bool _isLastAiMessage(List<MessageModel> messages, int index) {
+    for (int i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender == MessageSender.ai) {
         return i == index;
       }
     }

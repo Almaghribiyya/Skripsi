@@ -11,6 +11,20 @@ from app.models.schemas import QueryResponse
 from app.services.rag_service import RAGService
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Reset in-memory rate limiter storage sebelum tiap test.
+    Slowapi Limiter di ask.py adalah singleton level modul,
+    tanpa reset ini state-nya bocor antar test (terutama setelah test_rate_limiter)."""
+    from app.routers.ask import limiter
+
+    try:
+        limiter._storage.reset()
+    except Exception:
+        pass
+    yield
+
+
 def get_test_settings() -> Settings:
     """Settings khusus untuk testing, auth dinonaktifkan."""
     return Settings(

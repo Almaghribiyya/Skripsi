@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../config/app_theme.dart';
 import '../../../models/message_model.dart';
 import 'ai_reference_card.dart';
@@ -10,9 +12,21 @@ class AiMessageBubble extends StatelessWidget {
   const AiMessageBubble({
     super.key,
     required this.message,
+    this.isLastAiMessage = false,
+    this.onRegenerate,
+    this.onDelete,
   });
 
   final MessageModel message;
+
+  // apakah ini pesan AI terakhir di percakapan
+  final bool isLastAiMessage;
+
+  // callback regenerate (hanya muncul di pesan AI terakhir)
+  final VoidCallback? onRegenerate;
+
+  // callback hapus pesan
+  final VoidCallback? onDelete;
 
   String get _timeLabel {
     final h = message.timestamp.hour.toString().padLeft(2, '0');
@@ -78,14 +92,80 @@ class AiMessageBubble extends StatelessWidget {
                       bottomRight: Radius.circular(16),
                     ),
                   ),
-                  child: Text(
-                    message.text,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      height: 1.5,
-                      color: isDark ? AppColors.textLight : AppColors.textDark,
+                  child: MarkdownBody(
+                    data: message.text,
+                    selectable: true,
+                    styleSheet: MarkdownStyleSheet(
+                      p: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        height: 1.5,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      strong: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.5,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      em: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic,
+                        height: 1.5,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      h1: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      h2: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      h3: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      listBullet: GoogleFonts.inter(
+                        fontSize: 16,
+                        height: 1.5,
+                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      code: GoogleFonts.sourceCodePro(
+                        fontSize: 14,
+                        color: AppColors.primary,
+                        backgroundColor: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : AppColors.primary.withValues(alpha: 0.08),
+                      ),
+                      codeblockDecoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.06)
+                            : AppColors.primary.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      blockquoteDecoration: BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.40),
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                      blockquotePadding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
                     ),
+                    onTapLink: (text, href, title) {
+                      if (href != null) {
+                        launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                      }
+                    },
                   ),
                 ),
                 // kartu referensi
@@ -98,6 +178,8 @@ class AiMessageBubble extends StatelessWidget {
                 MessageActionChips(
                   messageText: message.text,
                   messageId: message.id,
+                  onRegenerate: isLastAiMessage ? onRegenerate : null,
+                  onDelete: onDelete,
                 ),
               ],
             ),

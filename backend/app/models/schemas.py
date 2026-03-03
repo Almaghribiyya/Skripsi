@@ -7,6 +7,21 @@ from pydantic import BaseModel, Field
 
 # schema untuk request masuk dari user
 
+class RiwayatItem(BaseModel):
+    """Satu item riwayat percakapan sebelumnya."""
+
+    peran: str = Field(
+        ...,
+        description="Peran pengirim: 'user' atau 'ai'.",
+        examples=["user"],
+    )
+    konten: str = Field(
+        ...,
+        max_length=2000,
+        description="Isi pesan.",
+    )
+
+
 class QueryRequest(BaseModel):
     """Payload pertanyaan yang dikirim user ke endpoint tanya jawab."""
 
@@ -22,6 +37,14 @@ class QueryRequest(BaseModel):
         ge=1,
         le=5,
         description="Jumlah ayat referensi yang dikembalikan (1-5).",
+    )
+    riwayat_percakapan: list[RiwayatItem] = Field(
+        default_factory=list,
+        max_length=10,
+        description=(
+            "Riwayat percakapan sebelumnya untuk konteks memori. "
+            "Maksimal 10 pesan terakhir (5 giliran)."
+        ),
     )
 
 

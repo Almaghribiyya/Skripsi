@@ -52,6 +52,7 @@ async def ask_quran(
     result = rag_service.answer(
         pertanyaan=payload.pertanyaan,
         top_k=payload.top_k,
+        riwayat_percakapan=payload.riwayat_percakapan or None,
     )
 
     return result

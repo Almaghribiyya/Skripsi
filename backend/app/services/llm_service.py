@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 # template prompt untuk grounded generation dan negative rejection.
 # llm hanya boleh jawab berdasarkan konteks yang diberikan.
+# versi tanpa riwayat percakapan (single-turn)
 QURAN_QA_PROMPT = PromptTemplate(
     input_variables=["konteks", "pertanyaan"],
     template="""Anda adalah asisten virtual Islami yang bertugas menjawab pertanyaan berdasarkan Al-Qur'an.
@@ -31,6 +32,33 @@ ATURAN KETAT (Grounded Generation & Negative Rejection):
 3. JANGAN pernah mengarang ayat, tafsir, hadits, atau sumber yang tidak ada di konteks.
 4. Sebutkan rujukan surah dan nomor ayat yang relevan saat menjawab.
 5. Gunakan bahasa Indonesia yang baik, sopan, dan mudah dipahami.
+
+Jawaban:""",
+)
+
+# versi dengan riwayat percakapan (multi-turn conversation memory)
+QURAN_QA_PROMPT_WITH_HISTORY = PromptTemplate(
+    input_variables=["konteks", "pertanyaan", "riwayat"],
+    template="""Anda adalah asisten virtual Islami yang bertugas menjawab pertanyaan berdasarkan Al-Qur'an.
+Gunakan HANYA konteks (ayat dan tafsir) di bawah ini untuk menjawab pertanyaan.
+
+Konteks:
+{konteks}
+
+Riwayat Percakapan Sebelumnya:
+{riwayat}
+
+Pertanyaan Terbaru: {pertanyaan}
+
+ATURAN KETAT (Grounded Generation & Negative Rejection):
+1. Jawab HANYA berdasarkan konteks di atas. DILARANG menggunakan pengetahuan di luar konteks.
+2. Jika jawaban TIDAK ADA atau TIDAK CUKUP di dalam konteks yang diberikan, Anda WAJIB menjawab:
+   "Mohon maaf, berdasarkan ayat-ayat yang relevan dengan pencarian, saya tidak menemukan jawaban pasti untuk pertanyaan Anda. Saya dirancang untuk hanya menjawab berdasarkan rujukan ayat Al-Qur'an."
+3. JANGAN pernah mengarang ayat, tafsir, hadits, atau sumber yang tidak ada di konteks.
+4. Sebutkan rujukan surah dan nomor ayat yang relevan saat menjawab.
+5. Gunakan bahasa Indonesia yang baik, sopan, dan mudah dipahami.
+6. Perhatikan riwayat percakapan untuk memahami konteks pertanyaan pengguna, tetapi tetap jawab berdasarkan konteks ayat.
+7. Jika pengguna merujuk pada pesan sebelumnya (misalnya "jelaskan lebih lanjut"), gunakan riwayat untuk memahami apa yang dimaksud.
 
 Jawaban:""",
 )
@@ -65,11 +93,19 @@ class LLMService:
         )
         logger.info("LLM Fallback initialized: %s", settings.llm_fallback_model)
 
-    def generate(self, konteks: str, pertanyaan: str) -> str:
-        """Panggil llm untuk generate jawaban, dengan fallback chain."""
-        prompt_text = QURAN_QA_PROMPT.format(
-            konteks=konteks, pertanyaan=pertanyaan
-        )
+    def generate(
+        self, konteks: str, pertanyaan: str, riwayat: str = ""
+    ) -> str:
+        """Panggil llm untuk generate jawaban, dengan fallback chain.
+        Jika riwayat diberikan, gunakan prompt multi-turn."""
+        if riwayat:
+            prompt_text = QURAN_QA_PROMPT_WITH_HISTORY.format(
+                konteks=konteks, pertanyaan=pertanyaan, riwayat=riwayat
+            )
+        else:
+            prompt_text = QURAN_QA_PROMPT.format(
+                konteks=konteks, pertanyaan=pertanyaan
+            )
 
         # coba dulu pakai primary model
         try:

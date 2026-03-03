@@ -37,8 +37,15 @@ class RAGService:
         self._llm = llm_service
         self._threshold = settings.similarity_threshold
 
-    def answer(self, pertanyaan: str, top_k: int = 3) -> QueryResponse:
-        """Jalankan seluruh pipeline rag untuk satu pertanyaan."""
+    def answer(
+        self,
+        pertanyaan: str,
+        top_k: int = 3,
+        riwayat_percakapan: list | None = None,
+    ) -> QueryResponse:
+        """Jalankan seluruh pipeline rag untuk satu pertanyaan.
+        Jika riwayat_percakapan diberikan, LLM akan mempertimbangkan
+        konteks percakapan sebelumnya."""
 
         # cari ayat yang relevan lewat similarity search
         chunks = self._embedding.retrieve(query=pertanyaan, top_k=top_k)
@@ -104,8 +111,23 @@ class RAGService:
 
         konteks_teks = "\n\n".join(konteks_parts)
 
+        # rakit riwayat percakapan jadi teks untuk dikirim ke llm
+        riwayat_teks = ""
+        if riwayat_percakapan:
+            riwayat_parts = []
+            for item in riwayat_percakapan:
+                peran = "Pengguna" if item.peran == "user" else "Asisten"
+                # potong konten yang terlalu panjang untuk menghemat token
+                konten = item.konten[:500]
+                riwayat_parts.append(f"{peran}: {konten}")
+            riwayat_teks = "\n".join(riwayat_parts)
+
         # panggil llm untuk generate jawaban berdasarkan konteks ayat
-        jawaban = self._llm.generate(konteks=konteks_teks, pertanyaan=pertanyaan)
+        jawaban = self._llm.generate(
+            konteks=konteks_teks,
+            pertanyaan=pertanyaan,
+            riwayat=riwayat_teks,
+        )
 
         logger.info(
             "RAG pipeline selesai: pertanyaan='%s', skor_tertinggi=%.4f, refs=%d",

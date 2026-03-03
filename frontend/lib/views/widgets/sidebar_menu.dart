@@ -117,7 +117,11 @@ class _SidebarMenuState extends State<SidebarMenu> {
                           );
                         },
                         onDeleteSession: (sessionId) {
-                          viewModel.deleteSession(sessionId);
+                          _showDeleteSessionDialog(
+                            context,
+                            viewModel,
+                            sessionId,
+                          );
                         },
                       ),
                     ),
@@ -475,6 +479,76 @@ class _SidebarMenuState extends State<SidebarMenu> {
                 style: GoogleFonts.inter(
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // dialog konfirmasi hapus sesi chat
+  void _showDeleteSessionDialog(
+    BuildContext context,
+    ChatViewModel viewModel,
+    String sessionId,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor:
+              isDark ? AppColors.drawerSurface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  color: Colors.redAccent, size: 24),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  'Hapus Percakapan',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.slate900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Percakapan ini akan dihapus secara permanen dan tidak bisa dikembalikan. Lanjutkan?',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              height: 1.5,
+              color: isDark ? AppColors.slate300 : AppColors.slate700,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.inter(
+                  color: isDark ? AppColors.slate400 : AppColors.slate500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                viewModel.deleteSession(sessionId);
+                Navigator.pop(ctx);
+              },
+              child: Text(
+                'Hapus',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.redAccent,
                 ),
               ),
             ),

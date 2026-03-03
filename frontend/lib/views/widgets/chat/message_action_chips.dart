@@ -4,16 +4,24 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../config/app_theme.dart';
 
-// baris aksi di bawah pesan AI: salin dan bagikan
+// baris aksi di bawah pesan AI: salin, bagikan, regenerate, hapus
 class MessageActionChips extends StatefulWidget {
   const MessageActionChips({
     super.key,
     required this.messageText,
     required this.messageId,
+    this.onRegenerate,
+    this.onDelete,
   });
 
   final String messageText;
   final String messageId;
+
+  // callback regenerate jawaban (hanya di pesan AI terakhir)
+  final VoidCallback? onRegenerate;
+
+  // callback hapus pesan
+  final VoidCallback? onDelete;
 
   @override
   State<MessageActionChips> createState() => _MessageActionChipsState();
@@ -61,6 +69,20 @@ class _MessageActionChipsState extends State<MessageActionChips> {
             isDark: isDark,
             onTap: _handleShare,
           ),
+          if (widget.onRegenerate != null)
+            _ActionChip(
+              icon: Icons.refresh,
+              label: 'Regenerate',
+              isDark: isDark,
+              onTap: widget.onRegenerate!,
+            ),
+          if (widget.onDelete != null)
+            _ActionChip(
+              icon: Icons.delete_outline,
+              label: 'Hapus',
+              isDark: isDark,
+              onTap: widget.onDelete!,
+            ),
         ],
       ),
     );
